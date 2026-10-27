@@ -732,6 +732,259 @@ button.game-tile {
   pointer-events: none;
 }
 
+/* ===== UNO TABLE: PLAYERS AROUND THE EDGES ===== */
+
+.table {
+  position: relative;
+  display: block;
+  min-height: calc(100vh - 125px);
+  height: calc(100vh - 125px);
+  box-sizing: border-box;
+  overflow: hidden;
+  isolation: isolate;
+  padding: 12px;
+}
+
+/* Keep the background visible behind everything. */
+.table::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* The opponent seats are positioned individually. */
+.opponents {
+  display: contents;
+}
+
+.opponent-seat {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.opponent {
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: #0c392b;
+  border: 1px solid #ffffff55;
+  color: white;
+  font-size: 12px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.opponent.active {
+  outline: 2px solid #ffe16b;
+  box-shadow: 0 0 12px #ffe16b88;
+}
+
+/* Player at the top. */
+.seat-top {
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: column;
+}
+
+/* Player on the left. */
+.seat-left {
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: column;
+}
+
+/* Player on the right. */
+.seat-right {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: column;
+}
+
+/* Hidden cards use your Back.jpg image. */
+.opponent-cards {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+}
+
+.opponent-card-back {
+  display: block;
+  width: 34px;
+  height: 49px;
+  object-fit: contain;
+  flex: 0 0 auto;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Top player's cards stay upright and overlap slightly. */
+.seat-top .opponent-cards {
+  flex-direction: row;
+}
+
+.seat-top .opponent-card-back {
+  margin-left: -13px;
+}
+
+.seat-top .opponent-card-back:first-child {
+  margin-left: 0;
+}
+
+/* Side players' cards turn sideways to follow the table edge. */
+.seat-left .opponent-cards,
+.seat-right .opponent-cards {
+  flex-direction: column;
+}
+
+.seat-left .opponent-card-back,
+.seat-right .opponent-card-back {
+  width: 34px;
+  height: 49px;
+  margin-top: -28px;
+  transform: rotate(90deg);
+}
+
+.seat-left .opponent-card-back:first-child,
+.seat-right .opponent-card-back:first-child {
+  margin-top: 0;
+}
+
+/* Draw and discard piles remain in the middle. */
+.center-table {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(12px, 4vw, 48px);
+  min-height: 0;
+  z-index: 1;
+}
+
+.pile {
+  text-align: center;
+}
+
+#topCard .card {
+  margin: 0 auto;
+}
+
+/* Your player label and hand stay at the bottom. */
+.my-player {
+  position: absolute;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+
+#myHand {
+  position: absolute;
+  bottom: 35px;
+  left: 8%;
+  right: 8%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 90px;
+  padding: 8px 5px 12px;
+  z-index: 3;
+}
+
+#myHand .card {
+  flex: 0 0 clamp(43px, 6vw, 76px);
+  width: clamp(43px, 6vw, 76px);
+  margin-left: -12px;
+  cursor: pointer;
+  transition: transform 130ms ease;
+}
+
+#myHand .card:first-child {
+  margin-left: 0;
+}
+
+#myHand .card:hover:not(:disabled) {
+  transform: translateY(-10px);
+  z-index: 4;
+}
+
+#gameMessage {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  text-align: center;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.game-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  z-index: 5;
+}
+
+/* Smaller screens */
+@media (max-width: 650px) {
+  .table {
+    min-height: 650px;
+    height: calc(100vh - 100px);
+  }
+
+  .seat-left {
+    left: 2px;
+  }
+
+  .seat-right {
+    right: 2px;
+  }
+
+  .opponent {
+    padding: 5px 6px;
+    font-size: 10px;
+  }
+
+  .opponent-card-back {
+    width: 25px;
+    height: 37px;
+  }
+
+  .seat-left .opponent-card-back,
+  .seat-right .opponent-card-back {
+    width: 25px;
+    height: 37px;
+    margin-top: -21px;
+  }
+
+  .center-table {
+    gap: 10px;
+  }
+
+  #myHand {
+    left: 2%;
+    right: 2%;
+  }
+
+  .my-player {
+    bottom: 135px;
+  }
+}
+
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     transition: none !important;
