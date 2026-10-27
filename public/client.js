@@ -2,81 +2,13 @@
 const socket = io();
 const $ = id => document.getElementById(id);
 
-
-/* ===== LOBBY MODIFIER CONTROLS ===== */
-
-const modifierIds = {
-  stacking: "modStacking",
-  jumpIn: "modJumpIn",
-  zeroSeven: "modZeroSeven",
-  drawUntilPlayable: "modDrawUntil",
-  sixReaction: "modSixReaction"
-};
-
-function readModifierSettings() {
-  const settings = {};
-
-  for (const [key, id] of Object.entries(modifierIds)) {
-    settings[key] = document.getElementById(id).checked;
-  }
-
-  settings.startingCards = Number(
-    document.getElementById("startingCards").value
-  );
-
-  return settings;
-}
-
-function sendModifierSettings() {
-  if (!lastState || socket.id !== lastState.hostId || lastState.started) {
-    return;
-  }
-
-  socket.emit("updateSettings", readModifierSettings());
-}
-
-for (const id of [
-  ...Object.values(modifierIds),
-  "startingCards"
-]) {
-  document.getElementById(id).addEventListener(
-    "change",
-    sendModifierSettings
-  );
-}
-
-function renderModifierSettings(state) {
-  const settings = state.settings || {
-    stacking: false,
-    jumpIn: false,
-    zeroSeven: false,
-    drawUntilPlayable: false,
-    sixReaction: false,
-    startingCards: 7
-  };
-
-  const isHost = socket.id === state.hostId;
-  const panel = document.getElementById("modifierPanel");
-
-  panel.hidden = !!state.started;
-
-  for (const [key, id] of Object.entries(modifierIds)) {
-    const input = document.getElementById(id);
-    input.checked = !!settings[key];
-    input.disabled = !isHost || state.started;
-  }
-
-  const startingCards = document.getElementById("startingCards");
-  startingCards.value = String(settings.startingCards || 7);
-  startingCards.disabled = !isHost || state.started;
-
-  document.getElementById("modifierPermission").textContent = isHost
-    ? "You're the host. Change these settings before starting."
-    : "Only the host can change these settings.";
-}
-
+let roomCode = "";
+let state = null;
+let lastState = null;
+let pendingWildIndex = null;
 
 const CARD_IMAGES = "/cards/";
+
 const COLOR_LETTERS = {
   red: "R",
   blue: "B",
@@ -93,12 +25,15 @@ const COLOR_HEX = {
 
 const imageCache = new Map();
 
+/* ===== PAGE NAVIGATION ===== */
+
 function showPage(pageId) {
   document.querySelectorAll(".page").forEach(page => {
     page.classList.add("hidden");
   });
 
-  $(pageId).classList.remove("hidden");
+  const page = $(pageId);
+  if (page) page.classList.remove("hidden");
 }
 
 $("getInButton").onclick = () => showPage("gamesMenu");
@@ -107,11 +42,12 @@ $("unoTile").onclick = () => showPage("lobby");
 $("gamesButton").onclick = () => showPage("gamesMenu");
 $("backToLobby").onclick = () => showPage("lobby");
 
-let roomCode = "";
-let state = null;
-let pendingWildIndex = null;
+/* ===== CONNECTION ===== */
 
-socket.on("connect", () => $("status").textContent = "Connected.");
+socket.on("connect", () => {
+  $("status").textContent = "Connected.";
+});
+
 socket.on("disconnect", () => {
   $("status").textContent = "Connection lost. Reconnecting...";
 });
@@ -121,6 +57,8 @@ socket.on("notice", text => {
   $("lobbyStatus").textContent = text;
   $("gameMessage").textContent = text;
 });
+
+/* ===== ROOM CONTROLS ===== */
 
 $("createRoom").onclick = () => {
   socket.emit("createRoom", $("playerName").value);
@@ -157,6 +95,96 @@ $("sayUno").onclick = () => {
     "UNO call is visual only in this prototype.";
 };
 
+/* ===== LOBBY MODIFIER CONTROLS ===== */
+
+const modifierIds = {
+  stacking: "modStacking",
+  jumpIn: "modJumpIn",
+  zeroSeven: "modZeroSeven",
+  drawUntilPlayable: "modDrawUntil",
+  sixReaction: "modSixReaction"
+};
+
+function readModifierSettings() {
+  const settings = {};
+
+  for (const [key, id] of Object.entries(modifierIds)) {
+    const input = $(id);
+    if (input) settings[key] = input.checked;
+  }
+
+  const startingCards = $("startingCards");
+  settings.startingCards = startingCards
+    ? Number(startingCards.value)
+    : 7;
+
+  return settings;
+}
+
+function sendModifierSettings() {
+  if (
+    !lastState ||
+    socket.id !== lastState.hostId ||
+    lastState.started
+  ) {
+    return;
+  }
+
+  socket.emit("updateSettings", readModifierSettings());
+}
+
+for (const id of [
+  ...Object.values(modifierIds),
+  "startingCards"
+]) {
+  const input = $(id);
+
+  if (input) {
+    input.addEventListener("change", sendModifierSettings);
+  }
+}
+
+function renderModifierSettings(next) {
+  const settings = next.settings || {
+    stacking: false,
+    jumpIn: false,
+    zeroSeven: false,
+    drawUntilPlayable: false,
+    sixReaction: false,
+    startingCards: 7
+  };
+
+  const isHost = socket.id === next.hostId;
+  const panel = $("modifierPanel");
+
+  if (panel) panel.hidden = !!next.started;
+
+  for (const [key, id] of Object.entries(modifierIds)) {
+    const input = $(id);
+    if (!input) continue;
+
+    input.checked = !!settings[key];
+    input.disabled = !isHost || !!next.started;
+  }
+
+  const startingCards = $("startingCards");
+
+  if (startingCards) {
+    startingCards.value = String(settings.startingCards || 7);
+    startingCards.disabled = !isHost || !!next.started;
+  }
+
+  const permission = $("modifierPermission");
+
+  if (permission) {
+    permission.textContent = isHost
+      ? "You're the host. Change these settings before starting."
+      : "Only the host can change these settings.";
+  }
+}
+
+/* ===== CARD IMAGES ===== */
+
 function cardFilename(card) {
   const letter = COLOR_LETTERS[card.color];
 
@@ -173,6 +201,7 @@ function cardFilename(card) {
   };
 
   const suffix = specialNames[card.value] ?? card.value;
+
   return `${letter}${suffix}.png`;
 }
 
@@ -187,8 +216,8 @@ function loadCardImage(filename) {
 }
 
 /*
- * Recolor the dark/black background of a Wild card while keeping
- * its white symbols and lettering intact.
+ * Recolor the dark background of a Wild card while preserving
+ * its bright lettering and symbols.
  */
 function recolorWildImage(image, chosenColor) {
   const canvas = document.createElement("canvas");
@@ -202,7 +231,10 @@ function recolorWildImage(image, chosenColor) {
   context.drawImage(image, 0, 0);
 
   const imageData = context.getImageData(
-    0, 0, canvas.width, canvas.height
+    0,
+    0,
+    canvas.width,
+    canvas.height
   );
 
   const pixels = imageData.data;
@@ -220,26 +252,23 @@ function recolorWildImage(image, chosenColor) {
     const r = pixels[i];
     const g = pixels[i + 1];
     const b = pixels[i + 2];
+
     const brightness = (r + g + b) / 3;
     const maxChannel = Math.max(r, g, b);
     const minChannel = Math.min(r, g, b);
     const saturation = maxChannel - minChannel;
 
-    /*
-     * Change near-black, nearly neutral pixels only.
-     * Bright white lettering and colored symbols are preserved.
-     * The threshold can be adjusted if your artwork uses dark gray
-     * rather than pure black for its background.
-     */
     if (brightness < 75 && saturation < 45) {
       const amount = 0.35 + (1 - brightness / 75) * 0.65;
 
       pixels[i] = Math.round(
         r * (1 - amount) + replacement.r * amount
       );
+
       pixels[i + 1] = Math.round(
         g * (1 - amount) + replacement.g * amount
       );
+
       pixels[i + 2] = Math.round(
         b * (1 - amount) + replacement.b * amount
       );
@@ -247,11 +276,13 @@ function recolorWildImage(image, chosenColor) {
   }
 
   context.putImageData(imageData, 0, 0);
+
   return canvas.toDataURL("image/png");
 }
 
 function makeCard(card, small = false, chosenColor = null) {
   const button = document.createElement("button");
+
   button.className = "card " +
     (card.color === "wild" ? "wild-card" : card.color);
 
@@ -273,6 +304,7 @@ function makeCard(card, small = false, chosenColor = null) {
     }
 
     const img = document.createElement("img");
+
     img.alt = `${card.color} ${card.value}`;
     img.draggable = false;
     img.className = "uno-card-image";
@@ -290,6 +322,7 @@ function makeCard(card, small = false, chosenColor = null) {
     displayImage();
   } else {
     image.onload = displayImage;
+
     image.onerror = () => {
       button.textContent = String(card.value);
       button.title = `Missing image: ${filename}`;
@@ -299,8 +332,53 @@ function makeCard(card, small = false, chosenColor = null) {
   return button;
 }
 
+/* ===== SIX REACTION ===== */
+
+function renderSixReaction(next) {
+  const panel = $("sixReactionPanel");
+  const button = $("sixReactionButton");
+  const text = $("sixReactionText");
+
+  if (!panel || !button || !text) return;
+
+  const reaction = next.game?.sixReaction;
+  const active = !!reaction?.active;
+
+  panel.hidden = !active;
+
+  if (!active) return;
+
+  const alreadyPressed =
+    Array.isArray(reaction.pressed) &&
+    reaction.pressed.includes(socket.id);
+
+  text.textContent = alreadyPressed
+    ? "You're safe! Waiting for the others..."
+    : "A 6 was played! Tap before everyone else!";
+
+  button.disabled = alreadyPressed;
+  button.textContent = alreadyPressed
+    ? "YOU'RE SAFE!"
+    : "6! TAP TO BE SAFE";
+}
+
+const sixButton = $("sixReactionButton");
+
+if (sixButton) {
+  sixButton.addEventListener("click", () => {
+    sixButton.disabled = true;
+    socket.emit("pressSix");
+  });
+}
+
+/* ===== RECEIVE GAME STATE ===== */
+
 socket.on("state", next => {
   state = next;
+  lastState = next;
+
+  renderModifierSettings(next);
+  renderSixReaction(next);
 
   const gameStarted = !!next.started;
 
@@ -315,9 +393,11 @@ socket.on("state", next => {
 
     next.players.forEach(player => {
       const row = document.createElement("div");
+
       row.className = "player-item";
       row.textContent =
         player.name + (player.id === next.hostId ? " · HOST" : "");
+
       $("playerList").appendChild(row);
     });
 
@@ -332,68 +412,80 @@ socket.on("state", next => {
     return;
   }
 
-  const currentPlayer = next.players.find(p => p.isTurn);
+  const currentPlayer = next.players.find(player => player.isTurn);
 
   $("turnLabel").textContent = next.game.winner
     ? next.game.winner + " wins!"
     : (currentPlayer?.name || "Someone") + "'s turn";
 
-  $("deckLabel").textContent = next.game.drawCount + " cards left";
+  $("deckLabel").textContent =
+    next.game.drawCount + " cards left";
 
-  
-$("opponents").replaceChildren();
+  /* ===== PLAYERS AROUND THE TABLE ===== */
 
-const me = next.players.find(player => player.id === socket.id);
+  $("opponents").replaceChildren();
 
-$("myPlayerBadge").textContent = me
-  ? `YOU · ${me.count}`
-  : "YOU";
+  const me = next.players.find(player => player.id === socket.id);
 
-$("myPlayerBadge").classList.toggle(
-  "active",
-  !!me?.isTurn
-);
+  $("myPlayerBadge").textContent = me
+    ? `YOU · ${me.count}`
+    : "YOU";
 
-// Put the other players around the table in turn order.
-const otherPlayers = next.players.filter(
-  player => player.id !== socket.id
-);
-
-const seats = ["seat-left", "seat-top", "seat-right"];
-
-otherPlayers.forEach((player, index) => {
-  const seat = document.createElement("div");
-  seat.className = `opponent-seat ${seats[index] || "seat-top"}`;
-
-  const badge = document.createElement("div");
-  badge.className =
-    "opponent" + (player.isTurn ? " active" : "");
-  badge.textContent = `${player.name} · ${player.count}`;
-
-  const cards = document.createElement("div");
-  cards.className = "opponent-cards";
-  cards.setAttribute(
-    "aria-label",
-    `${player.count} hidden cards`
+  $("myPlayerBadge").classList.toggle(
+    "active",
+    !!me?.isTurn
   );
 
-  // Show the card-back image once for each hidden card.
-  for (let i = 0; i < player.count; i++) {
-    const img = document.createElement("img");
-    img.src = "/cards/Back.jpg";
-    img.alt = "Hidden card";
-    img.draggable = false;
-    img.className = "opponent-card-back";
-    cards.appendChild(img);
-  }
+  const otherPlayers = next.players.filter(
+    player => player.id !== socket.id
+  );
 
-  seat.append(badge, cards);
-  $("opponents").appendChild(seat);
-});
+  const seats = ["seat-left", "seat-top", "seat-right"];
+
+  otherPlayers.forEach((player, index) => {
+    const seat = document.createElement("div");
+
+    seat.className =
+      `opponent-seat ${seats[index] || "seat-top"}`;
+
+    const badge = document.createElement("div");
+
+    badge.className =
+      "opponent" + (player.isTurn ? " active" : "");
+
+    badge.textContent = `${player.name} · ${player.count}`;
+
+    const cards = document.createElement("div");
+
+    cards.className = "opponent-cards";
+
+    cards.setAttribute(
+      "aria-label",
+      `${player.count} hidden cards`
+    );
+
+    for (let i = 0; i < player.count; i++) {
+      const img = document.createElement("img");
+
+      img.src = "/cards/Back.jpg";
+      img.alt = "Hidden card";
+      img.draggable = false;
+      img.className = "opponent-card-back";
+
+      cards.appendChild(img);
+    }
+
+    seat.append(badge, cards);
+    $("opponents").appendChild(seat);
+  });
+
+  /* ===== DISCARD PILE ===== */
 
   $("topCard").replaceChildren(
     makeCard(next.game.top, false, next.game.color)
   );
+
+  /* ===== YOUR HAND ===== */
 
   $("myHand").replaceChildren();
 
@@ -403,7 +495,12 @@ otherPlayers.forEach((player, index) => {
   next.hand.forEach((card, index) => {
     const button = makeCard(card);
 
-    button.disabled = !isMyTurn || !!next.game.winner;
+    const reactionActive = !!next.game.sixReaction?.active;
+
+    button.disabled =
+      (!isMyTurn && !next.game.stacking && !next.game.lastAction) ||
+      !!next.game.winner ||
+      reactionActive;
 
     button.onclick = () => {
       if (card.color === "wild") {
@@ -417,12 +514,17 @@ otherPlayers.forEach((player, index) => {
     $("myHand").appendChild(button);
   });
 
-  $("drawCard").disabled = !isMyTurn || !!next.game.winner;
+  $("drawCard").disabled =
+    !isMyTurn ||
+    !!next.game.winner ||
+    !!next.game.sixReaction?.active;
 
   $("gameMessage").textContent = next.game.winner
     ? next.game.winner + " won the game!"
     : next.game.color.toUpperCase() + " is the current color";
 });
+
+/* ===== WILD COLOR PICKER ===== */
 
 document.querySelectorAll("[data-color]").forEach(button => {
   button.onclick = () => {
@@ -444,4 +546,3 @@ $("colorPicker").addEventListener("click", event => {
     $("colorPicker").classList.add("hidden");
   }
 });
-
