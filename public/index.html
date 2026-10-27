@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101522">
+  <title>Zaytons Lil Land</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- MAIN MENU -->
+  <main id="mainMenu" class="page main-menu">
+    <div class="main-content">
+      <div class="brand-mark">Z</div>
+      <h1>Zaytons <span>Lil Land</span></h1>
+      <p class="tagline">A little place for a lot of fun.</p>
+      <button id="getInButton" class="primary-button">Get In</button>
+    </div>
+    <div class="version-label">YOUR LITTLE CORNER OF THE INTERNET</div>
+  </main>
+
+  <!-- GAME SELECTION -->
+  <main id="gamesMenu" class="page games-menu hidden">
+    <header class="site-header">
+      <button id="homeButton" class="back-button">← Home</button>
+      <div class="header-brand">Zaytons Lil Land</div>
+      <div class="header-label">GAME LIBRARY</div>
+    </header>
+
+    <section class="games-content">
+      <div class="section-heading">
+        <p class="eyebrow">PICK YOUR GAME</p>
+        <h2>The Playground</h2>
+        <p>Choose something to play with your friends.</p>
+      </div>
+
+      <div class="games-grid">
+
+        <!-- UNO GAME TILE -->
+        <button id="unoTile" class="game-tile uno-tile">
+          <div class="tile-art uno-art">
+            <div class="uno-card uno-red">7</div>
+            <div class="uno-card uno-yellow">3</div>
+            <div class="uno-card uno-blue">5</div>
+            <div class="uno-card uno-green">2</div>
+            <div class="uno-logo">UNO</div>
+          </div>
+          <div class="tile-info">
+            <div>
+              <span class="game-category">CARD GAME</span>
+              <h3>UNO</h3>
+              <p>Match cards. Outsmart friends. Cause chaos.</p>
+            </div>
+            <span class="tile-arrow">↗</span>
+          </div>
+        </button>
+
+        <!-- FUTURE GAME PLACEHOLDER -->
+        <div class="game-tile coming-soon">
+          <div class="tile-art future-art">
+            <div class="coming-symbol">?</div>
+            <span>YOUR NEXT ADVENTURE</span>
+          </div>
+          <div class="tile-info">
+            <div>
+              <span class="game-category">COMING SOON</span>
+              <h3>Something Else</h3>
+              <p>More games are on the way.</p>
+            </div>
+            <span class="tile-arrow">✦</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <footer class="site-footer">ZAYTONS LIL LAND · MADE FOR FRIENDS</footer>
+  </main>
+
+  <!-- UNO LOBBY -->
+  <main id="lobby" class="page screen hidden">
+    <header class="site-header">
+      <button id="gamesButton" class="back-button">← Games</button>
+      <div class="header-brand">UNO <span class="brand-plus">+</span></div>
+      <div class="header-label">PRIVATE MULTIPLAYER</div>
+    </header>
+
+    <section class="lobby-panel">
+      <div class="lobby-icon">🃏</div>
+      <h1>Play UNO</h1>
+      <p>Create a private room or join your friends.</p>
+
+      <input id="playerName" maxlength="16" placeholder="Your nickname">
+
+      <button id="createRoom" class="primary-button full-button">
+        Create private room
+      </button>
+
+      <div class="join-divider"><span>OR JOIN YOUR FRIENDS</span></div>
+
+      <div class="join-row">
+        <input id="roomCode" maxlength="6" placeholder="ROOM CODE">
+        <button id="joinRoom" class="secondary-button">Join</button>
+      </div>
+
+      <p id="status" role="status">Connecting to server...</p>
+    </section>
+  </main>
+
+  <!-- UNO WAITING ROOM -->
+  <main id="unoRoom" class="page screen hidden">
+    <header class="site-header">
+      <button id="backToLobby" class="back-button">← UNO</button>
+      <div class="header-brand">UNO <span class="brand-plus">+</span></div>
+      <div class="header-label">PRIVATE ROOM</div>
+    </header>
+
+    <section class="lobby-panel">
+      <p class="eyebrow">YOUR ROOM CODE</p>
+      <h1 id="codeLabel" class="room-code">------</h1>
+      <button id="copyCode" class="secondary-button">Copy room code</button>
+
+      <h2>Players</h2>
+      <div id="playerList" class="player-list"></div>
+
+      <button id="startGame" class="primary-button full-button">
+        Start game
+      </button>
+      <p id="lobbyStatus" role="status"></p>
+    </section>
+  </main>
+
+  <!-- UNO GAME TABLE -->
+  <main id="game" class="page screen hidden">
+    <header class="game-header">
+      <button id="leaveGame" class="back-button">← Leave game</button>
+      <div id="turnLabel">Waiting...</div>
+      <div id="deckLabel">Draw pile</div>
+    </header>
+
+    <section class="table">
+      <div id="opponents" class="opponents"></div>
+
+      <div class="center-table">
+        <div class="pile">
+          <div class="pile-title">DRAW PILE</div>
+          <button id="drawCard" class="card card-back">UNO</button>
+        </div>
+
+        <div class="pile">
+          <div class="pile-title">DISCARD</div>
+          <div id="topCard"></div>
+        </div>
+      </div>
+
+      <div id="gameMessage" role="status"></div>
+      <div id="myHand" class="hand"></div>
+
+      <div class="game-actions">
+        <button id="sayUno" class="secondary-button">UNO!</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- WILD COLOR PICKER -->
+  <div id="colorPicker" class="overlay hidden">
+    <div class="picker-panel">
+      <h2>Choose a color</h2>
+      <div class="color-options">
+        <button data-color="red" class="red">Red</button>
+        <button data-color="yellow" class="yellow">Yellow</button>
+        <button data-color="green" class="green">Green</button>
+        <button data-color="blue" class="blue">Blue</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/client.js"></script>
+</body>
+</html>
