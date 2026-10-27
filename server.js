@@ -17,25 +17,11 @@ const COLORS = ["red", "yellow", "green", "blue"];
 const DEFAULT_SETTINGS = {
   stacking: false,
   jumpIn: false,
-  sevenZero: false,
+  zeroSeven: false,
   drawUntilPlayable: false,
-  startingHand: 7,
-  sixReaction: false
+  sixReaction: false,
+  startingCards: 7
 };
-
-function cleanSettings(input = {}) {
-  return {
-    stacking: !!input.stacking,
-    jumpIn: !!input.jumpIn,
-    sevenZero: !!input.sevenZero,
-    drawUntilPlayable: !!input.drawUntilPlayable,
-    startingHand: Math.max(
-      5,
-      Math.min(25, Math.floor(Number(input.startingHand) || 7))
-    ),
-    sixReaction: !!input.sixReaction
-  };
-}
 
 function makeDeck() {
   const deck = [];
@@ -67,7 +53,6 @@ function shuffle(array) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
-
   return array;
 }
 
@@ -83,10 +68,26 @@ function drawCard(game) {
   return game.deck.pop() || null;
 }
 
-function findRoom(socketId) {
-  return [...rooms.values()].find(room =>
-    room.players.some(player => player.id === socketId)
-  );
+function playable(game, card) {
+  if (!card) return false;
+
+  if (game.pendingDraw > 0) {
+    if (!game.settings.stacking) return false;
+
+    if (game.pendingType === "Draw2") {
+      return card.value === "Draw2";
+    }
+
+    if (game.pendingType === "Wild4") {
+      return card.value === "Wild4";
+    }
+  }
+
+  const top = game.discard[game.discard.length - 1];
+
+  return card.color === "wild" ||
+    card.color === game.color ||
+    card.value === top.value;
 }
 
 function publicState(room) {
@@ -95,15 +96,16 @@ function publicState(room) {
   return {
     code: room.code,
     hostId: room.hostId,
-    started: !!game,
     settings: { ...room.settings },
-    players: room.players.map((player, index) => ({
-      id: player.id,
-      name: player.name,
-      count: game ? game.hands[index].length : 0,
-      isTurn: !!game && game.turn === index,
-      isHost: player.id === room.hostId
+    started: !!game,
+
+    players: room.players.map((p, i) => ({
+      id: p.id,
+      name: p.name,
+      count: game ? game.hands[i].length : 0,
+      isTurn: !!game && game.turn === i
     })),
+
     game: game ? {
       turn: game.turn,
       direction: game.direction,
@@ -113,15 +115,17 @@ function publicState(room) {
       winner: game.winner,
       pendingDraw: game.pendingDraw,
       pendingType: game.pendingType,
-      reaction: game.reaction ? {
-        active: true,
-        cardValue: "6",
-        waitingFor: [...game.reaction.waitingFor],
-        pressed: [...game.reaction.pressed],
-        deadline: game.reaction.deadline
-      } : null,
-      swapTarget: game.swapTarget,
-      lastAction: game.lastAction
+      lastAction: game.lastAction,
+      stacking: game.settings.stacking,
+      zeroRotation: game.settings.zeroSeven,
+      sevenSwap: game.settings.zeroSeven,
+      sixReaction: game.sixReaction
+        ? {
+            active: game.sixReaction.active,
+            pressed: [...game.sixReaction.pressed],
+            endsAt: game.sixReaction.endsAt
+          }
+        : null
     } : null
   };
 }
@@ -130,7 +134,7 @@ function sendState(room) {
   const state = publicState(room);
 
   for (const player of room.players) {
-    const playerIndex = room.players.findIndex(p => p.id === player.id);
+    const playerIndex = room.players.indexOf(player);
 
     io.to(player.id).emit("state", {
       ...state,
@@ -143,107 +147,23 @@ function message(socket, text) {
   socket.emit("notice", text);
 }
 
+function findRoom(socketId) {
+  return [...rooms.values()].find(room =>
+    room.players.some(player => player.id === socketId)
+  );
+}
+
 function nextTurn(game, amount = 1) {
   const count = game.hands.length;
-  game.turn = (
-    game.turn + amount * game.direction + count * 10
-  ) % count;
-}
-
-function playable(game, card) {
-  const top = game.discard[game.discard.length - 1];
-
-  if (game.pendingDraw > 0) {
-    if (game.pendingType === "Draw2") {
-      return card.value === "Draw2";
-    }
-
-    if (game.pendingType === "Wild4") {
-      return card.value === "Wild4";
-    }
-  }
-
-  return card.color === "wild" ||
-    card.color === game.color ||
-    card.value === top.value;
-}
-
-function hasPlayableCard(game, hand) {
-  return hand.some(card => playable(game, card));
-}
-
-function cancelReaction(game) {
-  if (game.reaction?.timer) {
-    clearTimeout(game.reaction.timer);
-  }
-
-  game.reaction = null;
-}
-
-function finishReaction(room) {
-  const game = room.game;
-  if (!game?.reaction) return;
-
-  const reaction = game.reaction;
-  const remaining = reaction.waitingFor.filter(
-    id => !reaction.pressed.includes(id)
-  );
-
-  cancelReaction(game);
-
-  if (remaining.length) {
-    const loserId = remaining[0];
-    const loserIndex = room.players.findIndex(p => p.id === loserId);
-
-    if (loserIndex >= 0) {
-      for (let i = 0; i < 2; i++) {
-        const card = drawCard(game);
-        if (card) game.hands[loserIndex].push(card);
-      }
-
-      io.to(loserId).emit(
-        "notice",
-        "You were last to react to the 6! Draw 2 cards."
-      );
-    }
-  }
-
-  sendState(room);
-}
-
-function beginReaction(room) {
-  const game = room.game;
-
-  if (!room.settings.sixReaction || room.players.length < 2) {
-    return false;
-  }
-
-  cancelReaction(game);
-
-  game.reaction = {
-    waitingFor: room.players.map(player => player.id),
-    pressed: [],
-    deadline: Date.now() + 5000,
-    timer: null
-  };
-
-  game.reaction.timer = setTimeout(() => {
-    finishReaction(room);
-  }, 5000);
-
-  return true;
+  game.turn = (game.turn + amount * game.direction + count) % count;
 }
 
 function startGame(room) {
   const deck = makeDeck();
-  const handSize = room.settings.startingHand;
-
-  if (deck.length < room.players.length * handSize + 1) {
-    return;
-  }
+  const amount = room.settings.startingCards;
 
   const hands = room.players.map(() =>
-    Array.from({ length: handSize }, () => deck.pop())
+    Array.from({ length: amount }, () => deck.pop())
   );
 
   let first = deck.pop();
@@ -266,7 +186,9 @@ function startGame(room) {
     pendingType: null,
     lastAction: null,
     swapTarget: null,
-    reaction: null
+    settings: { ...room.settings },
+    sixReaction: null,
+    sixTimer: null
   };
 
   if (first.value === "Skip" || first.value === "Reverse") {
@@ -276,10 +198,59 @@ function startGame(room) {
   sendState(room);
 }
 
+function finishSixReaction(room, penalizeIds = []) {
+  const game = room.game;
+  if (!game || !game.sixReaction) return;
+
+  if (game.sixTimer) clearTimeout(game.sixTimer);
+  game.sixTimer = null;
+
+  for (const id of penalizeIds) {
+    const playerIndex = room.players.findIndex(player => player.id === id);
+    if (playerIndex < 0) continue;
+
+    for (let i = 0; i < 2; i++) {
+      const card = drawCard(game);
+      if (card) game.hands[playerIndex].push(card);
+    }
+  }
+
+  game.sixReaction = null;
+  sendState(room);
+}
+
+function startSixReaction(room) {
+  const game = room.game;
+  if (!game || !game.settings.sixReaction) return;
+
+  const playerIds = room.players.map(player => player.id);
+
+  game.sixReaction = {
+    active: true,
+    pressed: [],
+    playerIds,
+    endsAt: Date.now() + 4000
+  };
+
+  game.sixTimer = setTimeout(() => {
+    if (!room.game || !room.game.sixReaction) return;
+
+    const reaction = room.game.sixReaction;
+    const missed = reaction.playerIds.filter(id =>
+      !reaction.pressed.includes(id)
+    );
+
+    finishSixReaction(room, missed);
+  }, 4000);
+
+  sendState(room);
+}
+
 function playCard(room, socket, index, chosenColor) {
   const game = room.game;
   if (!game || game.winner) return;
-  if (game.reaction) {
+
+  if (game.sixReaction?.active) {
     return message(socket, "Wait until the 6 reaction finishes.");
   }
 
@@ -288,24 +259,28 @@ function playCard(room, socket, index, chosenColor) {
 
   const hand = game.hands[playerIndex];
   const card = hand[index];
-
   if (!card) return;
 
-  const isJumpIn = room.settings.jumpIn &&
-    playerIndex !== game.turn &&
-    card.color === game.discard[game.discard.length - 1].color &&
-    card.value === game.discard[game.discard.length - 1].value;
+  const isTurn = playerIndex === game.turn;
+  const top = game.discard[game.discard.length - 1];
 
-  if (playerIndex !== game.turn && !isJumpIn) {
+  const isJumpIn = game.settings.jumpIn &&
+    !isTurn &&
+    card.color !== "wild" &&
+    card.color === top.color &&
+    card.value === top.value &&
+    game.pendingDraw === 0;
+
+  if (!isTurn && !isJumpIn) {
     return message(socket, "It isn't your turn.");
   }
 
-  if (playerIndex === game.turn && !playable(game, card)) {
-    return message(socket, "You can't play that card.");
+  if (isJumpIn) {
+    game.turn = playerIndex;
   }
 
-  if (playerIndex !== game.turn && game.pendingDraw > 0) {
-    return message(socket, "You can't Jump-In while a draw penalty is pending.");
+  if (!playable(game, card)) {
+    return message(socket, "You can't play that card.");
   }
 
   if (card.value === "Wild4") {
@@ -325,26 +300,17 @@ function playCard(room, socket, index, chosenColor) {
     return message(socket, "Choose a valid color.");
   }
 
-  if (isJumpIn) {
-    game.turn = playerIndex;
-  }
-
   hand.splice(index, 1);
   game.discard.push(card);
 
-  game.color = card.color === "wild" ? chosenColor : card.color;
+  if (card.color === "wild") game.color = chosenColor;
+  else game.color = card.color;
+
   game.lastAction = card.value;
   game.swapTarget = null;
 
   if (hand.length === 0) {
     game.winner = room.players[playerIndex].name;
-    cancelReaction(game);
-    sendState(room);
-    return;
-  }
-
-  if (card.value === "6" && beginReaction(room)) {
-    nextTurn(game);
     sendState(room);
     return;
   }
@@ -364,54 +330,26 @@ function playCard(room, socket, index, chosenColor) {
       break;
 
     case "Draw2":
-      if (room.settings.stacking) {
-        game.pendingDraw += 2;
-        game.pendingType = "Draw2";
-      } else {
-        const target = (game.turn + game.direction + room.players.length) %
-          room.players.length;
-
-        for (let i = 0; i < 2; i++) {
-          const drawn = drawCard(game);
-          if (drawn) game.hands[target].push(drawn);
-        }
-
-        nextTurn(game, 2);
-        sendState(room);
-        return;
-      }
+      game.pendingDraw += 2;
+      game.pendingType = "Draw2";
       nextTurn(game);
       break;
 
     case "Wild4":
-      if (room.settings.stacking) {
-        game.pendingDraw += 4;
-        game.pendingType = "Wild4";
-      } else {
-        const target = (game.turn + game.direction + room.players.length) %
-          room.players.length;
-
-        for (let i = 0; i < 4; i++) {
-          const drawn = drawCard(game);
-          if (drawn) game.hands[target].push(drawn);
-        }
-
-        nextTurn(game, 2);
-        sendState(room);
-        return;
-      }
+      game.pendingDraw += 4;
+      game.pendingType = "Wild4";
       nextTurn(game);
       break;
 
     case "7":
-      if (room.settings.sevenZero) {
+      if (game.settings.zeroSeven) {
         game.swapTarget = playerIndex;
       }
       nextTurn(game);
       break;
 
     case "0":
-      if (room.settings.sevenZero) {
+      if (game.settings.zeroSeven) {
         game.hands.push(game.hands.shift());
         room.players.push(room.players.shift());
         game.turn = room.players.findIndex(p => p.id === socket.id);
@@ -421,9 +359,14 @@ function playCard(room, socket, index, chosenColor) {
 
     default:
       nextTurn(game);
+      break;
   }
 
-  sendState(room);
+  if (card.value === "6" && game.settings.sixReaction) {
+    startSixReaction(room);
+  } else {
+    sendState(room);
+  }
 }
 
 io.on("connection", socket => {
@@ -432,7 +375,6 @@ io.on("connection", socket => {
     if (!name) return message(socket, "Enter a nickname.");
 
     let code;
-
     do {
       code = crypto.randomBytes(3).toString("hex").toUpperCase();
     } while (rooms.has(code));
@@ -441,8 +383,8 @@ io.on("connection", socket => {
       code,
       hostId: socket.id,
       players: [{ id: socket.id, name }],
-      settings: { ...DEFAULT_SETTINGS },
-      game: null
+      game: null,
+      settings: { ...DEFAULT_SETTINGS }
     };
 
     rooms.set(code, room);
@@ -456,7 +398,6 @@ io.on("connection", socket => {
     code = String(code || "").trim().toUpperCase();
 
     const room = rooms.get(code);
-
     if (!name) return message(socket, "Enter a nickname.");
     if (!room) return message(socket, "Room not found.");
     if (room.game) return message(socket, "That game has already started.");
@@ -470,20 +411,42 @@ io.on("connection", socket => {
 
   socket.on("updateSettings", incoming => {
     const room = findRoom(socket.id);
-
-    if (!room || room.game) return;
+    if (!room) return;
     if (room.hostId !== socket.id) {
-      return message(socket, "Only the host can change room settings.");
+      return message(socket, "Only the host can change modifiers.");
+    }
+    if (room.game) {
+      return message(socket, "Modifiers can't be changed after the game starts.");
     }
 
-    room.settings = cleanSettings(incoming);
+    const input = incoming || {};
+
+    for (const key of [
+      "stacking",
+      "jumpIn",
+      "zeroSeven",
+      "drawUntilPlayable",
+      "sixReaction"
+    ]) {
+      if (typeof input[key] === "boolean") {
+        room.settings[key] = input[key];
+      }
+    }
+
+    if (Number.isInteger(Number(input.startingCards))) {
+      room.settings.startingCards = Math.max(
+        5,
+        Math.min(25, Number(input.startingCards))
+      );
+    }
+
     sendState(room);
   });
 
   socket.on("startGame", () => {
     const room = findRoom(socket.id);
-
     if (!room) return;
+
     if (room.hostId !== socket.id) {
       return message(socket, "Only the host can start.");
     }
@@ -501,18 +464,18 @@ io.on("connection", socket => {
 
   socket.on("drawCard", () => {
     const room = findRoom(socket.id);
-    if (!room?.game) return;
+    if (!room || !room.game) return;
 
     const game = room.game;
     const playerIndex = room.players.findIndex(p => p.id === socket.id);
 
     if (playerIndex !== game.turn || game.winner) return;
-    if (game.reaction) return message(socket, "Wait for the 6 reaction.");
+    if (game.sixReaction?.active) {
+      return message(socket, "Wait until the 6 reaction finishes.");
+    }
 
     if (game.pendingDraw > 0) {
-      const amount = game.pendingDraw;
-
-      for (let i = 0; i < amount; i++) {
+      for (let i = 0; i < game.pendingDraw; i++) {
         const card = drawCard(game);
         if (card) game.hands[playerIndex].push(card);
       }
@@ -524,60 +487,69 @@ io.on("connection", socket => {
       return;
     }
 
-    if (room.settings.drawUntilPlayable) {
-      let safety = 0;
+    if (game.settings.drawUntilPlayable) {
+      let foundPlayable = false;
 
-      while (!hasPlayableCard(game, game.hands[playerIndex]) &&
-             game.deck.length > 0 && safety < 500) {
+      while (game.deck.length > 0 || game.discard.length > 1) {
         const card = drawCard(game);
         if (!card) break;
 
         game.hands[playerIndex].push(card);
-        safety++;
+
+        if (playable(game, card)) {
+          foundPlayable = true;
+          break;
+        }
       }
-    } else {
-      const card = drawCard(game);
-      if (card) game.hands[playerIndex].push(card);
+
+      if (!foundPlayable) nextTurn(game);
+      sendState(room);
+      return;
     }
+
+    const card = drawCard(game);
+    if (card) game.hands[playerIndex].push(card);
 
     nextTurn(game);
     sendState(room);
   });
 
-  socket.on("reactToSix", () => {
+  socket.on("pressSix", () => {
     const room = findRoom(socket.id);
-    if (!room?.game?.reaction) return;
+    if (!room || !room.game) return;
 
-    const reaction = room.game.reaction;
+    const game = room.game;
+    const reaction = game.sixReaction;
 
-    if (!reaction.waitingFor.includes(socket.id)) return;
+    if (!reaction?.active) return;
+    if (!reaction.playerIds.includes(socket.id)) return;
     if (reaction.pressed.includes(socket.id)) return;
 
     reaction.pressed.push(socket.id);
 
-    const everyonePressed = reaction.waitingFor.every(id =>
-      reaction.pressed.includes(id)
+    const remaining = reaction.playerIds.filter(id =>
+      !reaction.pressed.includes(id)
     );
 
-    if (everyonePressed) {
-      cancelReaction(room.game);
+    if (remaining.length === 0) {
+      finishSixReaction(room, []);
+    } else if (remaining.length === 1) {
+      finishSixReaction(room, remaining);
+    } else {
       sendState(room);
-      return;
     }
-
-    sendState(room);
   });
 
   socket.on("swapHands", targetId => {
     const room = findRoom(socket.id);
-    if (!room?.game) return;
+    if (!room || !room.game) return;
 
     const game = room.game;
     const me = room.players.findIndex(p => p.id === socket.id);
     const target = room.players.findIndex(p => p.id === targetId);
 
     if (me !== game.turn || game.lastAction !== "7") return;
-    if (!room.settings.sevenZero) return;
+    if (!game.settings.zeroSeven) return;
     if (target < 0 || target === me) return;
 
     [game.hands[me], game.hands[target]] =
@@ -606,16 +578,23 @@ io.on("connection", socket => {
         }
 
         sendState(room);
-      } else if (room.game.reaction) {
-        const reaction = room.game.reaction;
-        reaction.waitingFor = reaction.waitingFor.filter(id => id !== socket.id);
-        reaction.pressed = reaction.pressed.filter(id => id !== socket.id);
+      } else {
+        if (room.game.sixReaction?.active) {
+          const reaction = room.game.sixReaction;
+          reaction.pressed.push(socket.id);
 
-        if (reaction.waitingFor.every(id => reaction.pressed.includes(id))) {
-          cancelReaction(room.game);
+          const remaining = reaction.playerIds.filter(id =>
+            !reaction.pressed.includes(id)
+          );
+
+          if (remaining.length <= 1) {
+            finishSixReaction(room, remaining);
+          } else {
+            sendState(room);
+          }
         }
 
-        sendState(room);
+        message(socket, "You disconnected from the game.");
       }
     }
   });
