@@ -23,7 +23,151 @@ const COLOR_HEX = {
   yellow: "#f2c500"
 };
 
+
 const imageCache = new Map();
+
+
+/* ===== SOUND EFFECTS + BACKGROUND MUSIC ===== */
+
+const SFX_PATH = "/sfx/";
+
+const sounds = {
+  music: new Audio(SFX_PATH + "bg-theme.mp3"),
+  draw2: new Audio(SFX_PATH + "draw2.mp3"),
+  draw4: new Audio(SFX_PATH + "draw4.mp3"),
+  drawCards: new Audio(SFX_PATH + "draw-cards.mp3"),
+  reverseClockwise: new Audio(SFX_PATH + "reverse-clockwise.mp3"),
+  reverseAnticlockwise: new Audio(SFX_PATH + "reverse-anticlockwise.mp3"),
+  skip: new Audio(SFX_PATH + "skip.mp3"),
+  wildConfirm: new Audio(SFX_PATH + "wild-confirm.mp3"),
+  wildPopup: new Audio(SFX_PATH + "wild-popup.mp3"),
+  turnReady: new Audio(SFX_PATH + "turn-ready.mp3")
+};
+
+sounds.music.loop = true;
+sounds.music.volume = 0.25;
+
+for (const [name, audio] of Object.entries(sounds)) {
+  if (name !== "music") audio.volume = 0.65;
+}
+
+function playSound(name) {
+  const audio = sounds[name];
+  if (!audio) return;
+
+  // Restart short effects so quick actions still play clearly.
+  if (name !== "music") {
+    audio.pause();
+    audio.currentTime = 0;
+  }
+
+  audio.play().catch(() => {
+    // Browsers may block audio until the player interacts with the page.
+  });
+}
+
+function startBackgroundMusic() {
+  if (sounds.music.paused) {
+    playSound("music");
+  }
+}
+
+/* ===== SPINNING DIRECTION SYMBOL ===== */
+
+let directionSymbol = null;
+let previousDirection = null;
+
+function setupDirectionSymbol() {
+  const center = document.querySelector(".center-table");
+  if (!center || directionSymbol) return;
+
+  directionSymbol = document.createElement("img");
+  directionSymbol.id = "directionSymbol";
+  directionSymbol.alt = "Current play direction";
+  directionSymbol.draggable = false;
+
+  center.appendChild(directionSymbol);
+}
+
+function updateDirectionSymbol(direction) {
+  setupDirectionSymbol();
+  if (!directionSymbol) return;
+
+  const clockwise = direction === 1;
+
+  directionSymbol.src = clockwise
+    ? "/symbols/spinning-clockwise.png"
+    : "/symbols/spinning-anticlockwise.png";
+
+  directionSymbol.classList.toggle("clockwise", clockwise);
+  directionSymbol.classList.toggle("anticlockwise", !clockwise);
+}
+
+function handleGameEffects(previous, next) {
+  if (!next.started || !next.game) return;
+
+  if (!previous?.started) {
+    startBackgroundMusic();
+    previousDirection = next.game.direction;
+    updateDirectionSymbol(next.game.direction);
+    return;
+  }
+
+  const oldGame = previous.game;
+  const newGame = next.game;
+
+  if (!oldGame || !newGame) return;
+
+  // Update the direction symbol when direction changes.
+  if (oldGame.direction !== newGame.direction) {
+    previousDirection = newGame.direction;
+    updateDirectionSymbol(newGame.direction);
+
+    playSound(
+      newGame.direction === 1
+        ? "reverseClockwise"
+        : "reverseAnticlockwise"
+    );
+  } else {
+    updateDirectionSymbol(newGame.direction);
+  }
+
+  // Detect a newly played special card.
+  const oldTop = oldGame.top;
+  const newTop = newGame.top;
+
+  const topChanged = oldTop &&
+    newTop &&
+    (oldTop.color !== newTop.color ||
+     oldTop.value !== newTop.value);
+
+  if (topChanged) {
+    if (newTop.value === "Draw2") playSound("draw2");
+    else if (newTop.value === "Wild4") playSound("draw4");
+    else if (newTop.value === "Skip") playSound("skip");
+  }
+
+  // Play a sound when your turn starts.
+  const wasMyTurn = previous.players?.some(
+    player => player.id === socket.id && player.isTurn
+  );
+
+  const isMyTurn = next.players?.some(
+    player => player.id === socket.id && player.isTurn
+  );
+
+  if (!wasMyTurn && isMyTurn && !newGame.winner) {
+    playSound("turnReady");
+  }
+
+  // Detect cards added to your hand after the game was already running.
+  if (Array.isArray(previous.hand) && Array.isArray(next.hand)) {
+    if (next.hand.length > previous.hand.length) {
+      playSound("drawCards");
+    }
+  }
+}
+
 
 /* ===== PAGE NAVIGATION ===== */
 
@@ -374,6 +518,10 @@ if (sixButton) {
 /* ===== RECEIVE GAME STATE ===== */
 
 socket.on("state", next => {
+  const previous = lastState;
+
+  handleGameEffects(previous, next);
+
   state = next;
   lastState = next;
 
@@ -504,9 +652,10 @@ socket.on("state", next => {
 
     button.onclick = () => {
       if (card.color === "wild") {
-        pendingWildIndex = index;
-        $("colorPicker").classList.remove("hidden");
-      } else {
+  pendingWildIndex = index;
+  playSound("wildPopup");
+  $("colorPicker").classList.remove("hidden");
+} else {
         socket.emit("playCard", { index });
       }
     };
@@ -530,16 +679,18 @@ socket.on("state", next => {
 
 document.querySelectorAll("[data-color]").forEach(button => {
   button.onclick = () => {
-    if (pendingWildIndex === null) return;
+  if (pendingWildIndex === null) return;
 
-    socket.emit("playCard", {
-      index: pendingWildIndex,
-      color: button.dataset.color
-    });
+  playSound("wildConfirm");
 
-    pendingWildIndex = null;
-    $("colorPicker").classList.add("hidden");
-  };
+  socket.emit("playCard", {
+    index: pendingWildIndex,
+    color: button.dataset.color
+  });
+
+  pendingWildIndex = null;
+  $("colorPicker").classList.add("hidden");
+};
 });
 
 $("colorPicker").addEventListener("click", event => {
