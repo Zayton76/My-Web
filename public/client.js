@@ -2,6 +2,80 @@
 const socket = io();
 const $ = id => document.getElementById(id);
 
+
+/* ===== LOBBY MODIFIER CONTROLS ===== */
+
+const modifierIds = {
+  stacking: "modStacking",
+  jumpIn: "modJumpIn",
+  zeroSeven: "modZeroSeven",
+  drawUntilPlayable: "modDrawUntil",
+  sixReaction: "modSixReaction"
+};
+
+function readModifierSettings() {
+  const settings = {};
+
+  for (const [key, id] of Object.entries(modifierIds)) {
+    settings[key] = document.getElementById(id).checked;
+  }
+
+  settings.startingCards = Number(
+    document.getElementById("startingCards").value
+  );
+
+  return settings;
+}
+
+function sendModifierSettings() {
+  if (!lastState || socket.id !== lastState.hostId || lastState.started) {
+    return;
+  }
+
+  socket.emit("updateSettings", readModifierSettings());
+}
+
+for (const id of [
+  ...Object.values(modifierIds),
+  "startingCards"
+]) {
+  document.getElementById(id).addEventListener(
+    "change",
+    sendModifierSettings
+  );
+}
+
+function renderModifierSettings(state) {
+  const settings = state.settings || {
+    stacking: false,
+    jumpIn: false,
+    zeroSeven: false,
+    drawUntilPlayable: false,
+    sixReaction: false,
+    startingCards: 7
+  };
+
+  const isHost = socket.id === state.hostId;
+  const panel = document.getElementById("modifierPanel");
+
+  panel.hidden = !!state.started;
+
+  for (const [key, id] of Object.entries(modifierIds)) {
+    const input = document.getElementById(id);
+    input.checked = !!settings[key];
+    input.disabled = !isHost || state.started;
+  }
+
+  const startingCards = document.getElementById("startingCards");
+  startingCards.value = String(settings.startingCards || 7);
+  startingCards.disabled = !isHost || state.started;
+
+  document.getElementById("modifierPermission").textContent = isHost
+    ? "You're the host. Change these settings before starting."
+    : "Only the host can change these settings.";
+}
+
+
 const CARD_IMAGES = "/cards/";
 const COLOR_LETTERS = {
   red: "R",
