@@ -715,6 +715,18 @@ button.game-tile {
     width: 53px;
   }
 }
+.card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.uno-card-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
