@@ -498,8 +498,9 @@ socket.on("state", next => {
     const reactionActive = !!next.game.sixReaction?.active;
 
     button.disabled =
-  !!next.game.winner ||
-  reactionActive;
+    !!next.game.winner ||
+    !!next.game.drawing ||
+    reactionActive;
 
     button.onclick = () => {
       if (card.color === "wild") {
@@ -514,9 +515,11 @@ socket.on("state", next => {
   });
 
   $("drawCard").disabled =
-    !isMyTurn ||
-    !!next.game.winner ||
-    !!next.game.sixReaction?.active;
+  !isMyTurn ||
+  !!next.game.winner ||
+  !!next.game.sixReaction?.active ||
+  !!next.game.drawing ||
+  !!next.game.drawnPlayable;
 
   $("gameMessage").textContent = next.game.winner
     ? next.game.winner + " won the game!"
