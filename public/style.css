@@ -986,7 +986,7 @@ button.game-tile {
 /* Keep your player badge visible to the left of your hand */
 .my-player {
   position: absolute;
-  left: 12px;
+  left: 50px;
   bottom: 75px;
   transform: none;
   z-index: 6;
@@ -999,7 +999,7 @@ button.game-tile {
 /* Move only the YOU badge to the left */
 .my-player {
   position: absolute;
-  left: 12px;
+  left: 50px;
   bottom: 75px;
   transform: none;
   z-index: 6;
