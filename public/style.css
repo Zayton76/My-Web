@@ -1183,6 +1183,49 @@ button.game-tile {
   cursor: default;
 }
 
+/* ===== SPINNING UNO DIRECTION SYMBOL ===== */
+
+#directionSymbol {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 76px);
+  width: clamp(38px, 5vw, 58px);
+  height: clamp(38px, 5vw, 58px);
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+  filter: drop-shadow(0 3px 5px #0009);
+}
+
+.center-table {
+  overflow: visible;
+}
+
+#directionSymbol.clockwise {
+  animation: spinClockwise 2.5s linear infinite;
+}
+
+#directionSymbol.anticlockwise {
+  animation: spinAnticlockwise 2.5s linear infinite;
+}
+
+@keyframes spinClockwise {
+  from { transform: translateX(-50%) rotate(0deg); }
+  to   { transform: translateX(-50%) rotate(360deg); }
+}
+
+@keyframes spinAnticlockwise {
+  from { transform: translateX(-50%) rotate(0deg); }
+  to   { transform: translateX(-50%) rotate(-360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #directionSymbol {
+    animation: none !important;
+  }
+}
+
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
