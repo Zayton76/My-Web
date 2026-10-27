@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,6 +47,7 @@
             <div class="uno-card uno-green">2</div>
             <div class="uno-logo">UNO</div>
           </div>
+
           <div class="tile-info">
             <div>
               <span class="game-category">CARD GAME</span>
@@ -62,6 +64,7 @@
             <div class="coming-symbol">?</div>
             <span>YOUR NEXT ADVENTURE</span>
           </div>
+
           <div class="tile-info">
             <div>
               <span class="game-category">COMING SOON</span>
@@ -75,7 +78,9 @@
       </div>
     </section>
 
-    <footer class="site-footer">ZAYTONS LIL LAND · MADE FOR FRIENDS</footer>
+    <footer class="site-footer">
+      ZAYTONS LIL LAND · MADE FOR FRIENDS
+    </footer>
   </main>
 
   <!-- UNO LOBBY -->
@@ -91,16 +96,28 @@
       <h1>Play UNO</h1>
       <p>Create a private room or join your friends.</p>
 
-      <input id="playerName" maxlength="16" placeholder="Your nickname">
+      <input
+        id="playerName"
+        maxlength="16"
+        placeholder="Your nickname"
+        autocomplete="nickname"
+      >
 
       <button id="createRoom" class="primary-button full-button">
         Create private room
       </button>
 
-      <div class="join-divider"><span>OR JOIN YOUR FRIENDS</span></div>
+      <div class="join-divider">
+        <span>OR JOIN YOUR FRIENDS</span>
+      </div>
 
       <div class="join-row">
-        <input id="roomCode" maxlength="6" placeholder="ROOM CODE">
+        <input
+          id="roomCode"
+          maxlength="6"
+          placeholder="ROOM CODE"
+          autocomplete="off"
+        >
         <button id="joinRoom" class="secondary-button">Join</button>
       </div>
 
@@ -119,14 +136,101 @@
     <section class="lobby-panel">
       <p class="eyebrow">YOUR ROOM CODE</p>
       <h1 id="codeLabel" class="room-code">------</h1>
-      <button id="copyCode" class="secondary-button">Copy room code</button>
+
+      <button id="copyCode" class="secondary-button">
+        Copy room code
+      </button>
 
       <h2>Players</h2>
       <div id="playerList" class="player-list"></div>
 
+      <!-- GAME MODIFIERS -->
+      <section id="modifierPanel" class="modifier-panel">
+        <h3>Game modifiers</h3>
+
+        <p class="modifier-note" id="modifierPermission">
+          Only the host can change these settings.
+        </p>
+
+        <label class="modifier-option" for="modStacking">
+          <span>
+            <strong>Stacking +2 / +4</strong>
+            <small>Stack the same type of draw card.</small>
+          </span>
+          <input id="modStacking" type="checkbox">
+        </label>
+
+        <label class="modifier-option" for="modJumpIn">
+          <span>
+            <strong>Jump-In</strong>
+            <small>Play an identical colored card out of turn.</small>
+          </span>
+          <input id="modJumpIn" type="checkbox">
+        </label>
+
+        <label class="modifier-option" for="modZeroSeven">
+          <span>
+            <strong>7-0 Rule</strong>
+            <small>7 swaps hands; 0 rotates hands.</small>
+          </span>
+          <input id="modZeroSeven" type="checkbox">
+        </label>
+
+        <label class="modifier-option" for="modDrawUntil">
+          <span>
+            <strong>Draw Until Playable</strong>
+            <small>Keep drawing until you find a playable card.</small>
+          </span>
+          <input id="modDrawUntil" type="checkbox">
+        </label>
+
+        <label class="modifier-option" for="modSixReaction">
+          <span>
+            <strong>6 Reaction</strong>
+            <small>Race to tap the safety button when a 6 is played.</small>
+          </span>
+          <input id="modSixReaction" type="checkbox">
+        </label>
+
+        <label
+          class="starting-cards-setting"
+          for="startingCards"
+        >
+          <span>
+            <strong>Starting cards</strong>
+            <small>Choose between 5 and 25 cards per player.</small>
+          </span>
+
+          <select id="startingCards">
+            <option value="5">5 cards</option>
+            <option value="6">6 cards</option>
+            <option value="7" selected>7 cards</option>
+            <option value="8">8 cards</option>
+            <option value="9">9 cards</option>
+            <option value="10">10 cards</option>
+            <option value="11">11 cards</option>
+            <option value="12">12 cards</option>
+            <option value="13">13 cards</option>
+            <option value="14">14 cards</option>
+            <option value="15">15 cards</option>
+            <option value="16">16 cards</option>
+            <option value="17">17 cards</option>
+            <option value="18">18 cards</option>
+            <option value="19">19 cards</option>
+            <option value="20">20 cards</option>
+            <option value="21">21 cards</option>
+            <option value="22">22 cards</option>
+            <option value="23">23 cards</option>
+            <option value="24">24 cards</option>
+            <option value="25">25 cards</option>
+          </select>
+        </label>
+      </section>
+
       <button id="startGame" class="primary-button full-button">
         Start game
       </button>
+
       <p id="lobbyStatus" role="status"></p>
     </section>
   </main>
@@ -140,43 +244,94 @@
     </header>
 
     <section class="table">
-  <div id="opponents" class="opponents"></div>
+      <!-- OPPONENTS -->
+      <div id="opponents" class="opponents"></div>
 
-  <div class="center-table">
-    <div class="pile">
-      <div class="pile-title">DRAW PILE</div>
-      <button id="drawCard" class="card card-back">UNO</button>
-    </div>
+      <!-- CENTER PILES -->
+      <div class="center-table">
+        <div class="pile">
+          <div class="pile-title">DRAW PILE</div>
+          <button
+            id="drawCard"
+            class="card card-back"
+            type="button"
+            aria-label="Draw card"
+          >
+            UNO
+          </button>
+        </div>
 
-    <div class="pile">
-      <div class="pile-title">DISCARD</div>
-      <div id="topCard"></div>
-    </div>
-  </div>
+        <div class="pile">
+          <div class="pile-title">DISCARD</div>
+          <div id="topCard"></div>
+        </div>
+      </div>
 
-  <div id="gameMessage" role="status"></div>
-  <div id="myPlayerBadge" class="opponent my-player">YOU</div>
-  <div id="myHand" class="hand"></div>
+      <!-- GAME STATUS -->
+      <div id="gameMessage" role="status" aria-live="polite"></div>
 
-  <div class="game-actions">
-    <button id="sayUno" class="secondary-button">UNO!</button>
-  </div>
-</section>
+      <!-- YOUR PLAYER BADGE -->
+      <div id="myPlayerBadge" class="opponent my-player">
+        YOU
+      </div>
+
+      <!-- YOUR HAND -->
+      <div id="myHand" class="hand"></div>
+
+      <!-- GAME ACTIONS -->
+      <div class="game-actions">
+        <button id="sayUno" class="secondary-button" type="button">
+          UNO!
+        </button>
+      </div>
+    </section>
   </main>
+
+  <!-- SIX REACTION POPUP -->
+  <div
+    id="sixReactionPanel"
+    class="six-reaction-panel"
+    role="dialog"
+    aria-live="assertive"
+    aria-label="Six reaction"
+    hidden
+  >
+    <p id="sixReactionText">A 6 was played!</p>
+
+    <button
+      id="sixReactionButton"
+      type="button"
+    >
+      6! TAP TO BE SAFE
+    </button>
+  </div>
 
   <!-- WILD COLOR PICKER -->
   <div id="colorPicker" class="overlay hidden">
     <div class="picker-panel">
       <h2>Choose a color</h2>
+
       <div class="color-options">
-        <button data-color="red" class="red">Red</button>
-        <button data-color="yellow" class="yellow">Yellow</button>
-        <button data-color="green" class="green">Green</button>
-        <button data-color="blue" class="blue">Blue</button>
+        <button data-color="red" class="red" type="button">
+          Red
+        </button>
+
+        <button data-color="yellow" class="yellow" type="button">
+          Yellow
+        </button>
+
+        <button data-color="green" class="green" type="button">
+          Green
+        </button>
+
+        <button data-color="blue" class="blue" type="button">
+          Blue
+        </button>
       </div>
     </div>
   </div>
 
+  <!-- SCRIPTS -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="/client.js"></script>
 </body>
