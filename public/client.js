@@ -1,4 +1,4 @@
-```javascript
+
 const socket = io();
 const $ = id => document.getElementById(id);
 
@@ -331,4 +331,4 @@ $("colorPicker").addEventListener("click", event => {
     $("colorPicker").classList.add("hidden");
   }
 });
-```
+
