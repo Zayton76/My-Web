@@ -12,11 +12,10 @@
 }
 
 body {
-  background-image: url("/backgrounds/UNO-Classic-bg.jpg");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #151515;
+  color: white;
 }
 
 button, input {
@@ -727,6 +726,13 @@ button.game-tile {
   height: 100%;
   object-fit: contain;
   pointer-events: none;
+}
+.game-board {
+  background-image: url("/backgrounds/UNO-Classic-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 12px;
 }
 
 @media (prefers-reduced-motion: reduce) {
