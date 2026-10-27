@@ -498,9 +498,8 @@ socket.on("state", next => {
     const reactionActive = !!next.game.sixReaction?.active;
 
     button.disabled =
-      (!isMyTurn && !next.game.stacking && !next.game.lastAction) ||
-      !!next.game.winner ||
-      reactionActive;
+  !!next.game.winner ||
+  reactionActive;
 
     button.onclick = () => {
       if (card.color === "wild") {
