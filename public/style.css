@@ -1185,39 +1185,79 @@ button.game-tile {
 
 /* ===== SPINNING UNO DIRECTION SYMBOL ===== */
 
+
+/* ===== LARGE SPINNING DIRECTION RING ===== */
+
+.center-table {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(12px, 4vw, 48px);
+  min-height: 0;
+  overflow: visible;
+  z-index: 1;
+}
+
 #directionSymbol {
   position: absolute;
+  top: 50%;
   left: 50%;
-  top: calc(50% + 76px);
-  width: clamp(38px, 5vw, 58px);
-  height: clamp(38px, 5vw, 58px);
+
+  /* Large enough to surround both piles */
+  width: clamp(240px, 38vw, 390px);
+  height: clamp(240px, 38vw, 390px);
+
   object-fit: contain;
   pointer-events: none;
   user-select: none;
-  z-index: 2;
-  filter: drop-shadow(0 3px 5px #0009);
-}
+  z-index: 3;
 
-.center-table {
-  overflow: visible;
+  filter: drop-shadow(0 0 8px #0009);
+  transform-origin: center;
 }
 
 #directionSymbol.clockwise {
-  animation: spinClockwise 2.5s linear infinite;
+  animation: spinClockwise 5s linear infinite;
 }
 
 #directionSymbol.anticlockwise {
-  animation: spinAnticlockwise 2.5s linear infinite;
+  animation: spinAnticlockwise 5s linear infinite;
 }
 
 @keyframes spinClockwise {
-  from { transform: translateX(-50%) rotate(0deg); }
-  to   { transform: translateX(-50%) rotate(360deg); }
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 @keyframes spinAnticlockwise {
-  from { transform: translateX(-50%) rotate(0deg); }
-  to   { transform: translateX(-50%) rotate(-360deg); }
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
+@media (max-width: 650px) {
+  #directionSymbol {
+    width: clamp(200px, 65vw, 290px);
+    height: clamp(200px, 65vw, 290px);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 550px) {
+  #directionSymbol {
+    width: 220px;
+    height: 220px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
