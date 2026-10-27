@@ -266,17 +266,56 @@ socket.on("state", next => {
 
   $("deckLabel").textContent = next.game.drawCount + " cards left";
 
-  $("opponents").replaceChildren();
+  
+$("opponents").replaceChildren();
 
-  next.players.forEach(player => {
-    const badge = document.createElement("div");
-    badge.className = "opponent" + (player.isTurn ? " active" : "");
-    badge.textContent = player.id === socket.id
-      ? "YOU · " + player.count
-      : player.name + " · " + player.count;
+const me = next.players.find(player => player.id === socket.id);
 
-    $("opponents").appendChild(badge);
-  });
+$("myPlayerBadge").textContent = me
+  ? `YOU · ${me.count}`
+  : "YOU";
+
+$("myPlayerBadge").classList.toggle(
+  "active",
+  !!me?.isTurn
+);
+
+// Put the other players around the table in turn order.
+const otherPlayers = next.players.filter(
+  player => player.id !== socket.id
+);
+
+const seats = ["seat-left", "seat-top", "seat-right"];
+
+otherPlayers.forEach((player, index) => {
+  const seat = document.createElement("div");
+  seat.className = `opponent-seat ${seats[index] || "seat-top"}`;
+
+  const badge = document.createElement("div");
+  badge.className =
+    "opponent" + (player.isTurn ? " active" : "");
+  badge.textContent = `${player.name} · ${player.count}`;
+
+  const cards = document.createElement("div");
+  cards.className = "opponent-cards";
+  cards.setAttribute(
+    "aria-label",
+    `${player.count} hidden cards`
+  );
+
+  // Show the card-back image once for each hidden card.
+  for (let i = 0; i < player.count; i++) {
+    const img = document.createElement("img");
+    img.src = "/cards/Back.jpg";
+    img.alt = "Hidden card";
+    img.draggable = false;
+    img.className = "opponent-card-back";
+    cards.appendChild(img);
+  }
+
+  seat.append(badge, cards);
+  $("opponents").appendChild(seat);
+});
 
   $("topCard").replaceChildren(
     makeCard(next.game.top, false, next.game.color)
