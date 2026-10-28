@@ -500,6 +500,8 @@ if (card.color === "wild" && !COLORS.includes(chosenColor)) {
     return;
   }
 
+  
+  
   // Handle a counter to an existing penalty before normal card effects.
   if (game.pendingDraw > 0) {
     const previousPenalty = game.pendingDraw;
@@ -508,7 +510,6 @@ if (card.color === "wild" && !COLORS.includes(chosenColor)) {
       card.value === "Draw2" ||
       card.value === "Wild4"
     ) {
-      // Add this card's penalty to the accumulated attack.
       game.pendingDraw += card.value === "Draw2" ? 2 : 4;
       game.pendingType = card.value;
       game.penaltyResponse = null;
@@ -519,8 +520,6 @@ if (card.color === "wild" && !COLORS.includes(chosenColor)) {
     }
 
     if (card.value === "Reverse") {
-      // Reverse direction and redirect the attack to the next player
-      // in the new direction. This also supports Reverse on Reverse.
       game.direction *= -1;
       game.pendingDraw = previousPenalty;
       game.penaltyResponse = null;
@@ -529,6 +528,21 @@ if (card.color === "wild" && !COLORS.includes(chosenColor)) {
       handlePendingPenalty(room);
       return;
     }
+
+    if (card.value === "Skip") {
+      // Cancel the attack but keep the turn with the player
+      // who played Skip. The normal Skip effect must not run.
+      game.pendingDraw = 0;
+      game.pendingType = null;
+      game.penaltyResponse = null;
+      game.turn = playerIndex;
+      game.drawnPlayableCard = null;
+      game.lastAction = "Skip";
+
+      sendState(room);
+      return;
+    }
+  }
 
     if (card.value === "Skip") {
   // Block the attack. Do not advance or skip anyone's turn.
