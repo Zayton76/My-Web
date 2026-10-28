@@ -791,10 +791,6 @@ if ($("deckLabel")) {
   !!next.game.drawnPlayable;
 
   
-const myIndex = next.players.findIndex(
-  player => player.id === socket.id
-);
-
 const response = next.game.penaltyResponse;
 
 if (next.game.winner) {
