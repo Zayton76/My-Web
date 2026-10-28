@@ -684,14 +684,14 @@ if ($("deckLabel")) {
     player => player.id !== socket.id
   );
 
-  const seats = [
-  "seat-left-top",
-  "seat-left",
-  "seat-left-bottom",
-  "seat-right-top",
-  "seat-right",
-  "seat-right-bottom"
-];
+  const seatLayouts = {
+    1: ["seat-top"],
+    2: ["seat-top", "seat-left"],
+    3: ["seat-top", "seat-left", "seat-right"],
+    4: ["seat-top-left", "seat-left", "seat-right", "seat-top-right"]
+  };
+
+  const seats = seatLayouts[otherPlayers.length] || [];
 
   otherPlayers.forEach((player, index) => {
     const seat = document.createElement("div");
