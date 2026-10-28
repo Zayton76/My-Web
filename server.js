@@ -112,9 +112,13 @@ function playable(game, card) {
   }
 
   // Reverse and Skip can counter either penalty.
+    // Reverse and Skip can counter only if the color or type matches.
   if (
-    card.value === "Reverse" ||
-    card.value === "Skip"
+    (card.value === "Reverse" || card.value === "Skip") &&
+    (
+      card.color === game.color ||
+      card.value === game.pendingType
+    )
   ) {
     return true;
   }
@@ -282,9 +286,13 @@ function hasPenaltyCounter(game, playerIndex) {
     // Reverse and Skip must match the current attack color.
     // Wild4 has no fixed color, so use the chosen color stored
     // in game.color.
+        // Reverse and Skip can counter only if the color or type matches.
     if (
       (card.value === "Reverse" || card.value === "Skip") &&
-      card.color === game.color
+      (
+        card.color === game.color ||
+        card.value === game.pendingType
+      )
     ) {
       return true;
     }
