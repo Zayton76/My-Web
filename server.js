@@ -249,11 +249,12 @@ function stopDrawing(game) {
 }
 
 
+
 function hasPenaltyCounter(game, playerIndex) {
   const hand = game.hands[playerIndex] || [];
 
   return hand.some(card => {
-    // Same-type stacking works even when Stacking is OFF.
+    // Same-type stacking always works, even with Stacking OFF.
     if (
       game.pendingType === "Draw2" &&
       card.value === "Draw2"
@@ -268,9 +269,10 @@ function hasPenaltyCounter(game, playerIndex) {
       return true;
     }
 
+    // Extra counters only work with Stacking ON.
     if (!game.settings.stacking) return false;
 
-    // Extra counters require Stacking to be enabled.
+    // +4 can counter +2, but +2 cannot counter +4.
     if (
       game.pendingType === "Draw2" &&
       card.value === "Wild4"
@@ -278,10 +280,20 @@ function hasPenaltyCounter(game, playerIndex) {
       return true;
     }
 
-    return card.value === "Reverse" ||
-      card.value === "Skip";
+    // Reverse and Skip must match the current attack color.
+    // Wild4 has no fixed color, so use the chosen color stored
+    // in game.color.
+    if (
+      (card.value === "Reverse" || card.value === "Skip") &&
+      card.color === game.color
+    ) {
+      return true;
+    }
+
+    return false;
   });
 }
+
 
 
 function handlePendingPenalty(room) {
