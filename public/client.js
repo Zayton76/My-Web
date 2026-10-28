@@ -300,12 +300,6 @@ function readModifierSettings() {
     if (input) settings[key] = input.checked;
   }
 
-  const startingCards = $("startingCards");
-  settings.startingCards = startingCards
-    ? Number(startingCards.value)
-    : 7;
-
-  return settings;
 }
 
 function sendModifierSettings() {
@@ -320,10 +314,7 @@ function sendModifierSettings() {
   socket.emit("updateSettings", readModifierSettings());
 }
 
-for (const id of [
-  ...Object.values(modifierIds),
-  "startingCards"
-]) {
+for (const id of Object.values(modifierIds)) {
   const input = $(id);
 
   if (input) {
@@ -338,7 +329,6 @@ function renderModifierSettings(next) {
     zeroSeven: false,
     drawUntilPlayable: false,
     sixReaction: false,
-    startingCards: 7
   };
 
   const isHost = socket.id === next.hostId;
