@@ -1697,8 +1697,49 @@ button.game-tile {
 #game #gameMessage {
   display: none !important;
 }
+/* ===== TOP SEATS FOR 5-PLAYER UNO ===== */
 
+#game .seat-top-left,
+#game .seat-top-right {
+  position: absolute;
+  top: 12px;
+  width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  z-index: 3;
+}
 
+#game .seat-top-left {
+  left: calc(50% - 105px);
+  transform: translateX(-50%);
+}
+
+#game .seat-top-right {
+  left: calc(50% + 105px);
+  transform: translateX(-50%);
+}
+
+/* Keep the two top players' cards in a horizontal row */
+#game .seat-top-left .opponent-cards,
+#game .seat-top-right .opponent-cards {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Preserve the compact overlapping card backs */
+#game .seat-top-left .opponent-card-back,
+#game .seat-top-right .opponent-card-back {
+  margin-left: -13px;
+}
+
+#game .seat-top-left .opponent-card-back:first-child,
+#game .seat-top-right .opponent-card-back:first-child {
+  margin-left: 0;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
