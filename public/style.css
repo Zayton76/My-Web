@@ -1670,15 +1670,22 @@ button.game-tile {
 /* Move only the draw pile */
 #game .center-table .pile:first-child {
   position: relative;
-  left: -200px;
+  left: -350px;
   top: -85px;
 }
 
-/* Keep the discard pile in the middle */
-#game .center-table .pile:nth-child(2) {
+/* Keep the table as the positioning reference */
+#game .table {
   position: relative;
-  left: 0;
-  top: 0;
+}
+
+/* Center the discard pile on the table */
+#game .center-table .pile:nth-child(2) {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
 }
 
 
