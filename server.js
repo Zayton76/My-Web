@@ -633,7 +633,7 @@ io.on("connection", socket => {
     if (!name) return message(socket, "Enter a nickname.");
     if (!room) return message(socket, "Room not found.");
     if (room.game) return message(socket, "That game has already started.");
-    if (room.players.length >= 4) return message(socket, "Room is full.");
+    if (room.players.length >= 6) return message(socket, "Room is full.");
 
     room.players.push({ id: socket.id, name });
     socket.join(code);
