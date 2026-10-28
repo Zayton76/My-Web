@@ -555,7 +555,6 @@ if (card.color === "wild" && !COLORS.includes(chosenColor)) {
   sendState(room);
   return;
 }
-  }
 
   switch (card.value) {
 
@@ -614,7 +613,7 @@ case "Wild4":
   } else {
     sendState(room);
   }
-
+}
 
 io.on("connection", socket => {
   socket.on("createRoom", name => {
