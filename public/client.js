@@ -743,8 +743,32 @@ if ($("deckLabel")) {
       cards.appendChild(img);
     }
 
-    seat.append(badge, cards);
-    $("opponents").appendChild(seat);
+    // Show a triangle only to the player who played the 7.
+if (
+  next.game.swapPlayerId === socket.id &&
+  next.game.lastAction === "7"
+) {
+  const swapButton = document.createElement("button");
+
+  swapButton.type = "button";
+  swapButton.className = "swap-triangle";
+  swapButton.textContent = "▲";
+  swapButton.title = `Swap hands with ${player.name}`;
+  swapButton.setAttribute(
+    "aria-label",
+    `Swap hands with ${player.name}`
+  );
+
+  swapButton.addEventListener("click", () => {
+    socket.emit("swapHands", player.id);
+  });
+
+  seat.append(badge, swapButton, cards);
+} else {
+  seat.append(badge, cards);
+}
+
+$("opponents").appendChild(seat);
   });
 
   /* ===== DISCARD PILE ===== */
