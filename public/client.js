@@ -684,7 +684,14 @@ if ($("deckLabel")) {
     player => player.id !== socket.id
   );
 
-  const seats = ["seat-left", "seat-top", "seat-right"];
+  const seats = [
+  "seat-left-top",
+  "seat-left",
+  "seat-left-bottom",
+  "seat-right-top",
+  "seat-right",
+  "seat-right-bottom"
+];
 
   otherPlayers.forEach((player, index) => {
     const seat = document.createElement("div");
