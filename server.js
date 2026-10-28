@@ -581,13 +581,26 @@ case "Wild4":
   nextTurn(game);
   break;
 
-    case "0":
+        case "0":
       if (game.settings.zeroSeven) {
-        game.hands.push(game.hands.shift());
-        room.players.push(room.players.shift());
-        game.turn = room.players.findIndex(p => p.id === socket.id);
+        // Remember whose turn it was before rotating.
+        const currentPlayerId = room.players[game.turn].id;
+
+        // Rotate every player's hand in the same direction.
+        const lastHand = game.hands.pop();
+        game.hands.unshift(lastHand);
+
+        // Keep player order unchanged so turn order stays correct.
+        // Find the player who played the 0 after the hand rotation.
+        game.turn = room.players.findIndex(
+          player => player.id === currentPlayerId
+        );
+
+        // Move to the next player.
+        nextTurn(game);
+      } else {
+        nextTurn(game);
       }
-      nextTurn(game);
       break;
 
     default:
