@@ -614,7 +614,7 @@ case "Wild4":
   } else {
     sendState(room);
   }
-}
+
 
 io.on("connection", socket => {
   socket.on("createRoom", name => {
