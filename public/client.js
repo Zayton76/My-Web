@@ -674,9 +674,29 @@ if ($("deckLabel")) {
   !!next.game.drawing ||
   !!next.game.drawnPlayable;
 
-  $("gameMessage").textContent = next.game.winner
-    ? next.game.winner + " won the game!"
-    : next.game.color.toUpperCase() + " is the current color";
+  
+const myIndex = next.players.findIndex(
+  player => player.id === socket.id
+);
+
+const response = next.game.penaltyResponse;
+
+if (next.game.winner) {
+  $("gameMessage").textContent =
+    next.game.winner + " won the game!";
+} else if (response && response.playerIndex === myIndex) {
+  $("gameMessage").textContent =
+    `You received a +${response.amount} penalty! ` +
+    `Play a matching ${response.type === "Draw2" ? "+2" : "+4"} ` +
+    `to stack it, or click Draw Card to accept ${response.amount} cards.`;
+} else if (next.game.pendingDraw > 0) {
+  $("gameMessage").textContent =
+    `A +${next.game.pendingDraw} penalty is pending.`;
+} else {
+  $("gameMessage").textContent =
+    next.game.color.toUpperCase() + " is the current color";
+}
+
 });
 
 /* ===== WILD COLOR PICKER ===== */
