@@ -154,6 +154,8 @@ function publicState(room) {
       stacking: game.settings.stacking,
       zeroRotation: game.settings.zeroSeven,
       sevenSwap: game.settings.zeroSeven,
+      swapPlayerId: game.swapPlayerId,
+      swapTarget: game.swapTarget,
       drawing: game.drawing,
       drawnPlayable: !!game.drawnPlayableCard,
       sixReaction: game.sixReaction
@@ -223,6 +225,7 @@ function startGame(room) {
     pendingType: null,
     lastAction: null,
     swapTarget: null,
+    swapPlayerId: null,
     settings: { ...room.settings },
     sixReaction: null,
     sixTimer: null,
@@ -572,11 +575,14 @@ case "Wild4":
 
 
     case "7":
-      if (game.settings.zeroSeven) {
-        game.swapTarget = playerIndex;
-      }
-      nextTurn(game);
-      break;
+  if (game.settings.zeroSeven) {
+    // The player who played the 7 chooses another player's hand.
+    game.swapPlayerId = socket.id;
+    game.swapTarget = null;
+  }
+
+  nextTurn(game);
+  break;
 
     case "0":
       if (game.settings.zeroSeven) {
@@ -813,24 +819,34 @@ io.on("connection", socket => {
   });
 
   socket.on("swapHands", targetId => {
-    const room = findRoom(socket.id);
-    if (!room || !room.game) return;
+  const room = findRoom(socket.id);
+  if (!room || !room.game) return;
 
-    const game = room.game;
-    const me = room.players.findIndex(p => p.id === socket.id);
-    const target = room.players.findIndex(p => p.id === targetId);
+  const game = room.game;
 
-    if (me !== game.turn || game.lastAction !== "7") return;
-    if (!game.settings.zeroSeven) return;
-    if (target < 0 || target === me) return;
+  // Only the player who played the 7 may choose a target.
+  if (game.swapPlayerId !== socket.id) return;
+  if (game.lastAction !== "7") return;
+  if (!game.settings.zeroSeven) return;
+  if (game.winner) return;
 
-    [game.hands[me], game.hands[target]] =
-      [game.hands[target], game.hands[me]];
+  const me = room.players.findIndex(p => p.id === socket.id);
+  const target = room.players.findIndex(p => p.id === targetId);
 
-    game.lastAction = null;
-    game.swapTarget = null;
-    sendState(room);
-  });
+  // Never allow swapping with yourself or a nonexistent player.
+  if (me < 0 || target < 0 || target === me) return;
+
+  // Exchange the complete hands.
+  [game.hands[me], game.hands[target]] =
+    [game.hands[target], game.hands[me]];
+
+  // The choice is complete. The turn already advanced after the 7.
+  game.lastAction = null;
+  game.swapTarget = null;
+  game.swapPlayerId = null;
+
+  sendState(room);
+});
 
   socket.on("disconnect", () => {
     for (const [code, room] of rooms) {
