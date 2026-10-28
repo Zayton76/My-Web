@@ -300,6 +300,7 @@ function readModifierSettings() {
     if (input) settings[key] = input.checked;
   }
 
+  return settings;
 }
 
 function sendModifierSettings() {
@@ -344,12 +345,6 @@ function renderModifierSettings(next) {
     input.disabled = !isHost || !!next.started;
   }
 
-  const startingCards = $("startingCards");
-
-  if (startingCards) {
-    startingCards.value = String(settings.startingCards || 7);
-    startingCards.disabled = !isHost || !!next.started;
-  }
 
   const permission = $("modifierPermission");
 
