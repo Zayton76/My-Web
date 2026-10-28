@@ -1667,6 +1667,20 @@ button.game-tile {
   }
 }
 
+/* Move only the draw pile */
+#game .center-table .pile:first-child {
+  position: relative;
+  left: -70px;
+  top: -35px;
+}
+
+/* Keep the discard pile in the middle */
+#game .center-table .pile:nth-child(2) {
+  position: relative;
+  left: 0;
+  top: 0;
+}
+
 
 
 @media (prefers-reduced-motion: reduce) {
