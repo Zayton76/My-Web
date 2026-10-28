@@ -243,7 +243,6 @@ $("sayUno").onclick = () => {
 
 const modifierIds = {
   stacking: "modStacking",
-  jumpIn: "modJumpIn",
   zeroSeven: "modZeroSeven",
   drawUntilPlayable: "modDrawUntil",
   sixReaction: "modSixReaction"
