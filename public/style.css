@@ -1265,6 +1265,38 @@ button.game-tile {
     animation: none !important;
   }
 }
+```css
+/* Remove the grey-blue outer game panel */
+.game-container,
+.game-wrapper,
+.game-panel,
+#gameContainer,
+#gameWrapper,
+#gamePanel {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove rounded panel edges and excess framing */
+.game-container,
+.game-wrapper,
+#gameContainer,
+#gameWrapper {
+  border-radius: 0 !important;
+}
+
+/* Keep game information and controls visible */
+.game-info,
+.game-controls,
+.turn-info,
+.card-count,
+.back-button {
+  position: relative;
+  z-index: 5;
+}
+```
 
 
 @media (prefers-reduced-motion: reduce) {
