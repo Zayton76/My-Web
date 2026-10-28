@@ -270,6 +270,14 @@ async function drawPenalty(room, playerIndex, amount) {
   game.pendingType = null;
 
   sendState(room);
+  // Wait 2 seconds before drawing the first penalty card.
+await new Promise(resolve => setTimeout(resolve, 2000));
+
+if (
+  room.game !== game ||
+  game.drawSequenceId !== sequenceId ||
+  game.winner
+) return;
 
   for (let i = 0; i < amount; i++) {
     if (
@@ -284,7 +292,7 @@ async function drawPenalty(room, playerIndex, amount) {
     sendState(room);
 
     if (i < amount - 1) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 
