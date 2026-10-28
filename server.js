@@ -221,28 +221,12 @@ function startGame(room) {
   sendState(room);
 }
 
+
 function stopDrawing(game) {
   game.drawSequenceId++;
   game.drawing = false;
 }
-function hasPenaltyCounter(game, playerIndex) {
-  if (!game.settings.stacking) return false;
 
-  const hand = game.hands[playerIndex] || [];
-
-  return hand.some(card =>
-    (card.type === "Draw2" && game.pendingType === "Draw2") ||
-    (card.type === "Wild4" && game.pendingType === "Wild4")
-  );
-}
-
-function handlePendingPenalty(room) {
-  const game = room.game;
-  if (!game || game.winner || game.pendingDraw <= 0) return;
-
-  const targetIndex = game.turn;
-
-  
 function hasPenaltyCounter(game, playerIndex) {
   if (!game.settings.stacking) return false;
 
@@ -254,6 +238,19 @@ function hasPenaltyCounter(game, playerIndex) {
   );
 }
 
+function handlePendingPenalty(room) {
+  const game = room.game;
+
+  if (!game || game.winner || game.pendingDraw <= 0) return;
+
+  const targetIndex = game.turn;
+
+  if (hasPenaltyCounter(game, targetIndex)) {
+    game.penaltyResponse = {
+      playerIndex: targetIndex,
+      amount: game.pendingDraw,
+      type: game.pendingType
+    };
 
     sendState(room);
   } else {
@@ -261,7 +258,6 @@ function hasPenaltyCounter(game, playerIndex) {
     drawPenalty(room, targetIndex, game.pendingDraw);
   }
 }
-
 
 async function drawPenalty(room, playerIndex, amount) {
   const game = room.game;
@@ -395,13 +391,7 @@ function playCard(room, socket, index, chosenColor) {
 
   if (isJumpIn) game.turn = playerIndex;
 
-  if (!playable(game, card)) {
-    return message(socket, "You can't play that card.");
-  }
-
-  if (card.color === "wild" && !COLORS.includes(chosenColor)) {
-    return message(socket, "Choose a valid color.");
-  }
+  
 if (
   game.pendingDraw > 0 &&
   (!game.penaltyResponse ||
@@ -409,6 +399,15 @@ if (
 ) {
   return message(socket, "You aren't allowed to respond to this penalty.");
 }
+
+if (!playable(game, card)) {
+  return message(socket, "You can't play that card.");
+}
+
+if (card.color === "wild" && !COLORS.includes(chosenColor)) {
+  return message(socket, "Choose a valid color.");
+}
+
   hand.splice(index, 1);
 
   if (game.drawnPlayableCard === card) {
