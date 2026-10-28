@@ -531,15 +531,16 @@ if (card.color === "wild" && !COLORS.includes(chosenColor)) {
     }
 
     if (card.value === "Skip") {
-      // Block the attack without skipping the player who played Skip.
-      game.pendingDraw = 0;
-      game.pendingType = null;
-      game.penaltyResponse = null;
-      game.turn = playerIndex;
+  // Block the attack. Do not advance or skip anyone's turn.
+  game.pendingDraw = 0;
+  game.pendingType = null;
+  game.penaltyResponse = null;
+  game.turn = playerIndex;
+  game.lastAction = "Skip";
 
-      sendState(room);
-      return;
-    }
+  sendState(room);
+  return;
+}
   }
 
   switch (card.value) {
