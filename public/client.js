@@ -496,8 +496,11 @@ function makeCard(card, small = false, chosenColor = null) {
     image.onload = displayImage;
 
     image.onerror = () => {
-      button.textContent = String(card.value);
-      button.title = `Missing image: ${filename}`;
+      if (image.complete && !image.naturalWidth) {
+        // loadCardImage() handles retries.
+        button.textContent = String(card.value);
+        button.title = `Loading card image: ${filename}`;
+      }
     };
   }
 
