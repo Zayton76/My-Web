@@ -19,7 +19,6 @@ const DEFAULT_SETTINGS = {
   zeroSeven: false,
   drawUntilPlayable: false,
   sixReaction: false,
-  startingCards: 7
 };
 
 function shuffle(array) {
@@ -199,10 +198,8 @@ function nextTurn(game, amount = 1) {
 
 function startGame(room) {
   const deck = makeDeck();
-  const amount = room.settings.startingCards;
-
   const hands = room.players.map(() =>
-    Array.from({ length: amount }, () => deck.pop())
+    Array.from({ length: 7 }, () => deck.pop())
   );
 
   let first = deck.pop();
