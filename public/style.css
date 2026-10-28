@@ -1712,12 +1712,12 @@ button.game-tile {
 }
 
 #game .seat-top-left {
-  left: calc(50% - 105px);
+  left: calc(50% - 300px);
   transform: translateX(-50%);
 }
 
 #game .seat-top-right {
-  left: calc(50% + 105px);
+  left: calc(50% + 300px);
   transform: translateX(-50%);
 }
 
