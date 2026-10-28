@@ -129,6 +129,7 @@ function publicState(room) {
       winner: game.winner,
       pendingDraw: game.pendingDraw,
       pendingType: game.pendingType,
+      penaltyResponse: game.penaltyResponse,
       lastAction: game.lastAction,
       stacking: game.settings.stacking,
       zeroRotation: game.settings.zeroSeven,
@@ -205,6 +206,7 @@ function startGame(room) {
     settings: { ...room.settings },
     sixReaction: null,
     sixTimer: null,
+    penaltyResponse: null,
 
     // Automatic draw sequence controls.
     drawing: false,
@@ -222,6 +224,82 @@ function startGame(room) {
 function stopDrawing(game) {
   game.drawSequenceId++;
   game.drawing = false;
+}
+function hasPenaltyCounter(game, playerIndex) {
+  if (!game.settings.stacking) return false;
+
+  const hand = game.hands[playerIndex] || [];
+
+  return hand.some(card =>
+    (card.type === "Draw2" && game.pendingType === "Draw2") ||
+    (card.type === "Wild4" && game.pendingType === "Wild4")
+  );
+}
+
+function handlePendingPenalty(room) {
+  const game = room.game;
+  if (!game || game.winner || game.pendingDraw <= 0) return;
+
+  const targetIndex = game.turn;
+
+  
+function hasPenaltyCounter(game, playerIndex) {
+  if (!game.settings.stacking) return false;
+
+  const hand = game.hands[playerIndex] || [];
+
+  return hand.some(card =>
+    (card.value === "Draw2" && game.pendingType === "Draw2") ||
+    (card.value === "Wild4" && game.pendingType === "Wild4")
+  );
+}
+
+
+    sendState(room);
+  } else {
+    game.penaltyResponse = null;
+    drawPenalty(room, targetIndex, game.pendingDraw);
+  }
+}
+
+
+async function drawPenalty(room, playerIndex, amount) {
+  const game = room.game;
+  if (!game || game.winner || game.drawing) return;
+
+  game.drawing = true;
+  const sequenceId = ++game.drawSequenceId;
+
+  game.pendingDraw = 0;
+  game.pendingType = null;
+
+  sendState(room);
+
+  for (let i = 0; i < amount; i++) {
+    if (
+      room.game !== game ||
+      game.drawSequenceId !== sequenceId ||
+      game.winner
+    ) return;
+
+    const card = drawCard(game);
+    if (card) game.hands[playerIndex].push(card);
+
+    sendState(room);
+
+    if (i < amount - 1) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+
+  if (
+    room.game !== game ||
+    game.drawSequenceId !== sequenceId
+  ) return;
+
+  game.drawing = false;
+  nextTurn(game);
+  sendState(room);
 }
 
 function finishSixReaction(room, penalizeIds = []) {
@@ -324,7 +402,13 @@ function playCard(room, socket, index, chosenColor) {
   if (card.color === "wild" && !COLORS.includes(chosenColor)) {
     return message(socket, "Choose a valid color.");
   }
-
+if (
+  game.pendingDraw > 0 &&
+  (!game.penaltyResponse ||
+    game.penaltyResponse.playerIndex !== playerIndex)
+) {
+  return message(socket, "You aren't allowed to respond to this penalty.");
+}
   hand.splice(index, 1);
 
   if (game.drawnPlayableCard === card) {
@@ -361,17 +445,21 @@ function playCard(room, socket, index, chosenColor) {
       }
       break;
 
-    case "Draw2":
-      game.pendingDraw += 2;
-      game.pendingType = "Draw2";
-      nextTurn(game);
-      break;
+    
+case "Draw2":
+  game.pendingDraw += 2;
+  game.pendingType = "Draw2";
+  nextTurn(game);
+  handlePendingPenalty(room);
+  break;
 
-    case "Wild4":
-      game.pendingDraw += 4;
-      game.pendingType = "Wild4";
-      nextTurn(game);
-      break;
+case "Wild4":
+  game.pendingDraw += 4;
+  game.pendingType = "Wild4";
+  nextTurn(game);
+  handlePendingPenalty(room);
+  break;
+
 
     case "7":
       if (game.settings.zeroSeven) {
@@ -522,19 +610,19 @@ io.on("connection", socket => {
     // Accepting a pending penalty draws the entire accumulated
     // penalty. It is deliberately separate from normal drawing.
     if (game.pendingDraw > 0) {
-      const amount = game.pendingDraw;
-      game.pendingDraw = 0;
-      game.pendingType = null;
+  if (
+    !game.penaltyResponse ||
+    game.penaltyResponse.playerIndex !== playerIndex
+  ) {
+    return message(socket, "You can't accept this penalty right now.");
+  }
 
-      for (let i = 0; i < amount; i++) {
-        const card = drawCard(game);
-        if (card) game.hands[playerIndex].push(card);
-      }
+  const amount = game.pendingDraw;
+  game.penaltyResponse = null;
 
-      nextTurn(game);
-      sendState(room);
-      return;
-    }
+  await drawPenalty(room, playerIndex, amount);
+  return;
+}
 
     if (game.settings.drawUntilPlayable) {
       game.drawing = true;
