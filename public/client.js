@@ -680,18 +680,35 @@ if ($("deckLabel")) {
     !!me?.isTurn
   );
 
-  const otherPlayers = next.players.filter(
-    player => player.id !== socket.id
+  
+  const myIndex = next.players.findIndex(
+    player => player.id === socket.id
   );
 
+  // Start with the player after YOU, wrapping around at the end.
+  // This changes only the local display order, never player numbers.
+  const otherPlayers = myIndex >= 0
+    ? Array.from(
+        { length: next.players.length - 1 },
+        (_, offset) =>
+          next.players[(myIndex + offset + 1) % next.players.length]
+      )
+    : next.players.filter(player => player.id !== socket.id);
+
   const seatLayouts = {
-  1: ["seat-top"],
-  2: ["seat-left", "seat-top"],
-  3: ["seat-left", "seat-top", "seat-right"],
-  4: ["seat-left", "seat-top-left", "seat-right", "seat-top-right"]
-};
+    1: ["seat-top"], // 2 players
+    2: ["seat-left", "seat-top"], // 3 players
+    3: ["seat-left", "seat-top", "seat-right"], // 4 players
+    4: [
+      "seat-left",
+      "seat-top-left",
+      "seat-top-right",
+      "seat-right"
+    ] // 5 players
+  };
 
   const seats = seatLayouts[otherPlayers.length] || [];
+
 
   otherPlayers.forEach((player, index) => {
     const seat = document.createElement("div");
