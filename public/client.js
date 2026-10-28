@@ -562,12 +562,16 @@ socket.on("state", next => {
 
   const currentPlayer = next.players.find(player => player.isTurn);
 
+  if ($("turnLabel")) {
   $("turnLabel").textContent = next.game.winner
     ? next.game.winner + " wins!"
     : (currentPlayer?.name || "Someone") + "'s turn";
+}
 
+if ($("deckLabel")) {
   $("deckLabel").textContent =
     next.game.drawCount + " cards left";
+}
 
   /* ===== PLAYERS AROUND THE TABLE ===== */
 
