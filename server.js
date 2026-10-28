@@ -68,41 +68,62 @@ function drawCard(game) {
   return game.deck.pop() || null;
 }
 
+
 function playable(game, card) {
   if (!card) return false;
 
-  // +4 is allowed even if the player holds the current color.
-  // During a pending penalty, it can only be stacked when
-  // stacking is enabled and the pending penalty is also a +4.
-  if (card.value === "Wild4") {
-    if (game.pendingDraw > 0) {
-      return game.settings.stacking &&
-        game.pendingType === "Wild4";
+  // No penalty is pending: use normal UNO rules.
+  if (game.pendingDraw <= 0) {
+    if (card.value === "Wild4" || card.value === "Wild") {
+      return true;
     }
 
+    const top = game.discard[game.discard.length - 1];
+
+    return card.color === "wild" ||
+      card.color === game.color ||
+      card.value === top.value;
+  }
+
+  // Default rules: matching penalty cards can always stack.
+  if (
+    game.pendingType === "Draw2" &&
+    card.value === "Draw2"
+  ) {
     return true;
   }
 
-  if (game.pendingDraw > 0) {
-    if (!game.settings.stacking) return false;
+  if (
+    game.pendingType === "Wild4" &&
+    card.value === "Wild4"
+  ) {
+    return true;
+  }
 
-    if (game.pendingType === "Draw2") {
-      return card.value === "Draw2";
-    }
-
-    if (game.pendingType === "Wild4") {
-      return card.value === "Wild4";
-    }
-
+  // Extra counter moves require the Stacking modifier.
+  if (!game.settings.stacking) {
     return false;
   }
 
-  const top = game.discard[game.discard.length - 1];
+  // +4 can counter a +2 when the modifier is enabled.
+  if (
+    game.pendingType === "Draw2" &&
+    card.value === "Wild4"
+  ) {
+    return true;
+  }
 
-  return card.color === "wild" ||
-    card.color === game.color ||
-    card.value === top.value;
+  // Reverse and Skip can counter either penalty.
+  if (
+    card.value === "Reverse" ||
+    card.value === "Skip"
+  ) {
+    return true;
+  }
+
+  return false;
 }
+
 
 function publicState(room) {
   const game = room.game;
@@ -227,16 +248,41 @@ function stopDrawing(game) {
   game.drawing = false;
 }
 
-function hasPenaltyCounter(game, playerIndex) {
-  if (!game.settings.stacking) return false;
 
+function hasPenaltyCounter(game, playerIndex) {
   const hand = game.hands[playerIndex] || [];
 
-  return hand.some(card =>
-    (card.value === "Draw2" && game.pendingType === "Draw2") ||
-    (card.value === "Wild4" && game.pendingType === "Wild4")
-  );
+  return hand.some(card => {
+    // Same-type stacking works even when Stacking is OFF.
+    if (
+      game.pendingType === "Draw2" &&
+      card.value === "Draw2"
+    ) {
+      return true;
+    }
+
+    if (
+      game.pendingType === "Wild4" &&
+      card.value === "Wild4"
+    ) {
+      return true;
+    }
+
+    if (!game.settings.stacking) return false;
+
+    // Extra counters require Stacking to be enabled.
+    if (
+      game.pendingType === "Draw2" &&
+      card.value === "Wild4"
+    ) {
+      return true;
+    }
+
+    return card.value === "Reverse" ||
+      card.value === "Skip";
+  });
 }
+
 
 function handlePendingPenalty(room) {
   const game = room.game;
@@ -432,13 +478,60 @@ if (card.color === "wild" && !COLORS.includes(chosenColor)) {
   game.lastAction = card.value;
   game.swapTarget = null;
 
+
   if (hand.length === 0) {
     game.winner = room.players[playerIndex].name;
+    game.pendingDraw = 0;
+    game.pendingType = null;
+    game.penaltyResponse = null;
     sendState(room);
     return;
   }
 
+  // Handle a counter to an existing penalty before normal card effects.
+  if (game.pendingDraw > 0) {
+    const previousPenalty = game.pendingDraw;
+
+    if (
+      card.value === "Draw2" ||
+      card.value === "Wild4"
+    ) {
+      // Add this card's penalty to the accumulated attack.
+      game.pendingDraw += card.value === "Draw2" ? 2 : 4;
+      game.pendingType = card.value;
+      game.penaltyResponse = null;
+
+      nextTurn(game);
+      handlePendingPenalty(room);
+      return;
+    }
+
+    if (card.value === "Reverse") {
+      // Reverse direction and redirect the attack to the next player
+      // in the new direction. This also supports Reverse on Reverse.
+      game.direction *= -1;
+      game.pendingDraw = previousPenalty;
+      game.penaltyResponse = null;
+
+      nextTurn(game);
+      handlePendingPenalty(room);
+      return;
+    }
+
+    if (card.value === "Skip") {
+      // Block the attack without skipping the player who played Skip.
+      game.pendingDraw = 0;
+      game.pendingType = null;
+      game.penaltyResponse = null;
+      game.turn = playerIndex;
+
+      sendState(room);
+      return;
+    }
+  }
+
   switch (card.value) {
+
     case "Skip":
       nextTurn(game, 2);
       break;
