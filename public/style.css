@@ -1740,6 +1740,27 @@ button.game-tile {
 #game .seat-top-right .opponent-card-back:first-child {
   margin-left: 0;
 }
+.swap-triangle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px;
+  padding: 7px 12px;
+  border: 2px solid #ffe36e;
+  border-radius: 8px;
+  background: #272727;
+  color: #ffe36e;
+  font-size: 20px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.swap-triangle:hover {
+  background: #ffe36e;
+  color: #202020;
+  transform: scale(1.12);
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
