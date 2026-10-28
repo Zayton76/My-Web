@@ -349,41 +349,61 @@ function cardFilename(card) {
 }
 
 
+
 function loadCardImage(filename) {
-  if (!imageCache.has(filename)) {
-    const image = new Image();
-    let attempts = 0;
-    const maxAttempts = 3;
+  if (imageCache.has(filename)) {
+    return imageCache.get(filename);
+  }
+
+  const image = new Image();
+  image.__loaded = false;
+  image.__failed = false;
+
+  let attempts = 0;
+  const maxAttempts = 3;
+
+  function tryLoad() {
+    attempts++;
 
     image.onload = () => {
-      imageCache.set(filename, image);
+      image.__loaded = true;
+      image.__failed = false;
+
+      // Refresh every card currently waiting for this image.
+      document.querySelectorAll(".card").forEach(cardButton => {
+        if (cardButton.dataset.imageFilename === filename) {
+          cardButton.dispatchEvent(
+            new CustomEvent("card-image-ready")
+          );
+        }
+      });
     };
 
     image.onerror = () => {
-      attempts++;
-
       if (attempts < maxAttempts) {
         console.warn(
-          `Retrying card image (${attempts + 1}/${maxAttempts}): ${filename}`
+          `Retry ${attempts + 1}/${maxAttempts}: ${filename}`
         );
 
         image.src =
-          CARD_IMAGES +
-          filename +
+          CARD_IMAGES + filename +
           "?retry=" + attempts +
-          "&t=" + Date.now();
+          "&time=" + Date.now();
       } else {
+        image.__failed = true;
         console.error(
-          `Card image failed after ${maxAttempts} attempts: ${filename}`
+          `Could not load card image after 3 attempts: ${filename}`
         );
       }
     };
 
     image.src = CARD_IMAGES + filename;
-    imageCache.set(filename, image);
   }
 
-  return imageCache.get(filename);
+  imageCache.set(filename, image);
+  tryLoad();
+
+  return image;
 }
 
 
@@ -452,6 +472,7 @@ function recolorWildImage(image, chosenColor) {
   return canvas.toDataURL("image/png");
 }
 
+
 function makeCard(card, small = false, chosenColor = null) {
   const button = document.createElement("button");
 
@@ -467,11 +488,16 @@ function makeCard(card, small = false, chosenColor = null) {
     return button;
   }
 
+  button.dataset.imageFilename = filename;
+
   const image = loadCardImage(filename);
 
   function displayImage() {
-    if (!image.complete || !image.naturalWidth) {
-      button.textContent = String(card.value);
+    if (!image.__loaded || !image.naturalWidth) {
+      if (image.__failed) {
+        button.textContent = String(card.value);
+        button.title = `Image failed: ${filename}`;
+      }
       return;
     }
 
@@ -490,22 +516,13 @@ function makeCard(card, small = false, chosenColor = null) {
     button.replaceChildren(img);
   }
 
-  if (image.complete && image.naturalWidth) {
-    displayImage();
-  } else {
-    image.onload = displayImage;
+  button.addEventListener("card-image-ready", displayImage);
 
-    image.onerror = () => {
-      if (image.complete && !image.naturalWidth) {
-        // loadCardImage() handles retries.
-        button.textContent = String(card.value);
-        button.title = `Loading card image: ${filename}`;
-      }
-    };
-  }
+  displayImage();
 
   return button;
 }
+
 
 /* ===== SIX REACTION ===== */
 
