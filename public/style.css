@@ -1331,7 +1331,73 @@ button.game-tile {
 #game #leaveGame {
   cursor: pointer;
 }
+```css
+/* =========================================
+   FULLSCREEN UNO TABLE
+   ========================================= */
 
+/* Let the game occupy the whole browser viewport */
+#game {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  background: #071b17 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* The table fills all available space */
+#game .table {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+/* Keep Leave game above the table */
+#game .game-header {
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  right: auto !important;
+  z-index: 100 !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure the player hand stays visible */
+#game #myHand {
+  z-index: 5;
+}
+
+/* Mobile browser viewport support */
+@supports (height: 100dvh) {
+  #game {
+    height: 100dvh !important;
+  }
+}
+```
 
 
 @media (prefers-reduced-motion: reduce) {
