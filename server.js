@@ -529,19 +529,24 @@ if (card.color === "wild" && !COLORS.includes(chosenColor)) {
       return;
     }
 
+    
+    
     if (card.value === "Skip") {
-      // Cancel the attack but keep the turn with the player
-      // who played Skip. The normal Skip effect must not run.
+      // Cancel the pending penalty.
       game.pendingDraw = 0;
       game.pendingType = null;
       game.penaltyResponse = null;
-      game.turn = playerIndex;
-      game.drawnPlayableCard = null;
-      game.lastAction = "Skip";
 
+      // Consume your turn normally.
+      game.drawnPlayableCard = null;
+      nextTurn(game);
+
+      game.lastAction = "Skip";
       sendState(room);
       return;
     }
+
+
   }
 
 
