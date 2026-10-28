@@ -1688,6 +1688,16 @@ button.game-tile {
   z-index: 5;
 }
 
+/* Hide the text above the draw and discard piles */
+#game .pile-title {
+  display: none !important;
+}
+
+/* Hide the text below the piles */
+#game #gameMessage {
+  display: none !important;
+}
+
 
 
 @media (prefers-reduced-motion: reduce) {
