@@ -673,12 +673,6 @@ io.on("connection", socket => {
       }
     }
 
-    if (Number.isInteger(Number(input.startingCards))) {
-      room.settings.startingCards = Math.max(
-        5,
-        Math.min(25, Number(input.startingCards))
-      );
-    }
 
     sendState(room);
   });
