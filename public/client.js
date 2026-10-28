@@ -348,15 +348,44 @@ function cardFilename(card) {
   return `${letter}${suffix}.png`;
 }
 
+
 function loadCardImage(filename) {
   if (!imageCache.has(filename)) {
     const image = new Image();
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    image.onload = () => {
+      imageCache.set(filename, image);
+    };
+
+    image.onerror = () => {
+      attempts++;
+
+      if (attempts < maxAttempts) {
+        console.warn(
+          `Retrying card image (${attempts + 1}/${maxAttempts}): ${filename}`
+        );
+
+        image.src =
+          CARD_IMAGES +
+          filename +
+          "?retry=" + attempts +
+          "&t=" + Date.now();
+      } else {
+        console.error(
+          `Card image failed after ${maxAttempts} attempts: ${filename}`
+        );
+      }
+    };
+
     image.src = CARD_IMAGES + filename;
     imageCache.set(filename, image);
   }
 
   return imageCache.get(filename);
 }
+
 
 /*
  * Recolor the dark background of a Wild card while preserving
