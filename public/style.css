@@ -1265,7 +1265,7 @@ button.game-tile {
     animation: none !important;
   }
 }
-```css
+
 /* Remove the grey-blue outer game panel */
 .game-container,
 .game-wrapper,
@@ -1296,7 +1296,42 @@ button.game-tile {
   position: relative;
   z-index: 5;
 }
-```
+
+/* Remove the outer game screen's panel styling */
+#game {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove the grey-blue bar around turn, deck count and Leave game */
+#game .game-header {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* Remove the frame around the main table */
+#game .table {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Keep the game header above the table */
+#game .game-header {
+  position: relative;
+  z-index: 10;
+}
+
+/* Keep Leave game looking like a button */
+#game #leaveGame {
+  cursor: pointer;
+}
+
 
 
 @media (prefers-reduced-motion: reduce) {
