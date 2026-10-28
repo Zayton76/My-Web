@@ -1331,73 +1331,342 @@ button.game-tile {
 #game #leaveGame {
   cursor: pointer;
 }
-```css
 /* =========================================
-   FULLSCREEN UNO TABLE
+   ZAYTON'S LIL LAND — FULLSCREEN UNO FIX
    ========================================= */
 
-/* Let the game occupy the whole browser viewport */
+/* Make the game itself fill the browser */
 #game {
   position: fixed !important;
   inset: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
   height: 100dvh !important;
+  min-height: 0 !important;
   max-width: none !important;
   margin: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
   box-sizing: border-box !important;
-  background: #071b17 !important;
+  background: #0b3829 !important;
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
 
-/* The table fills all available space */
+/* Header becomes a floating Leave Game button */
+#game .game-header {
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  right: auto !important;
+  bottom: auto !important;
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 100 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* The table fills the viewport, but doesn't clip its contents */
 #game .table {
   position: absolute !important;
   inset: 0 !important;
   width: 100% !important;
   height: 100% !important;
   min-height: 0 !important;
+  max-height: none !important;
   margin: 0 !important;
-  padding: 0 !important;
+  padding: 12px !important;
   box-sizing: border-box !important;
+  overflow: visible !important;
+  isolation: isolate;
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  overflow: hidden !important;
+  background-image: url("/backgrounds/UNO-Classic-bg.jpg") !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
 }
 
-/* Keep Leave game above the table */
-#game .game-header {
+/* Keep the background behind the game pieces */
+#game .table::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Player seats and opponents */
+#game #opponents {
+  display: contents !important;
+}
+
+#game .opponent-seat {
+  position: absolute;
+  z-index: 3;
+}
+
+/* Top player */
+#game .seat-top {
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: column;
+}
+
+/* Left player */
+#game .seat-left {
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: column;
+}
+
+/* Right player */
+#game .seat-right {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  flex-direction: column;
+}
+
+/* Opponent card backs */
+#game .opponent-cards {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+}
+
+#game .opponent-card-back {
+  display: block;
+  width: 34px;
+  height: 49px;
+  object-fit: contain;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+
+#game .seat-top .opponent-card-back {
+  margin-left: -13px;
+}
+
+#game .seat-top .opponent-card-back:first-child {
+  margin-left: 0;
+}
+
+#game .seat-left .opponent-cards,
+#game .seat-right .opponent-cards {
+  flex-direction: column;
+}
+
+#game .seat-left .opponent-card-back,
+#game .seat-right .opponent-card-back {
+  margin-top: -28px;
+  transform: rotate(90deg);
+}
+
+#game .seat-left .opponent-card-back:first-child,
+#game .seat-right .opponent-card-back:first-child {
+  margin-top: 0;
+}
+
+/* Center draw and discard piles */
+#game .center-table {
   position: absolute !important;
-  top: 12px !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(18px, 4vw, 54px);
+  min-height: 0 !important;
+  width: max-content;
+  max-width: calc(100vw - 90px);
+  overflow: visible !important;
+  z-index: 2 !important;
+}
+
+#game .pile {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+#game #topCard .card {
+  margin: 0 auto;
+}
+
+/* Direction symbol stays behind the piles */
+#game #directionSymbol {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  z-index: 1 !important;
+  pointer-events: none;
+}
+
+/* Your player badge */
+#game #myPlayerBadge {
+  position: absolute !important;
   left: 12px !important;
   right: auto !important;
-  z-index: 100 !important;
-  width: auto !important;
-  height: auto !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+  bottom: 75px !important;
+  top: auto !important;
+  transform: none !important;
+  z-index: 6 !important;
+  max-width: 100px;
 }
 
-/* Ensure the player hand stays visible */
+/* Your hand */
 #game #myHand {
-  z-index: 5;
+  position: absolute !important;
+  left: 8% !important;
+  right: 8% !important;
+  bottom: 25px !important;
+  top: auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-end !important;
+  min-height: 100px;
+  max-height: 145px;
+  padding: 8px 5px 12px;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  z-index: 5 !important;
 }
 
-/* Mobile browser viewport support */
-@supports (height: 100dvh) {
-  #game {
-    height: 100dvh !important;
+#game #myHand .card {
+  flex: 0 0 clamp(43px, 6vw, 76px);
+  width: clamp(43px, 6vw, 76px);
+  margin-left: -12px;
+}
+
+#game #myHand .card:first-child {
+  margin-left: 0;
+}
+
+/* Card images */
+#game .uno-card-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+/* Game messages and action buttons */
+#game #gameMessage {
+  position: absolute !important;
+  left: 110px !important;
+  right: 110px !important;
+  bottom: 10px !important;
+  z-index: 7 !important;
+  text-align: center;
+  pointer-events: none;
+}
+
+#game .game-actions {
+  position: absolute !important;
+  right: 12px !important;
+  bottom: 12px !important;
+  z-index: 8 !important;
+}
+
+/* Keep player turn highlighting */
+#game .opponent.active {
+  outline: 2px solid #ffe16b;
+  box-shadow: 0 0 12px #ffe16b88;
+}
+
+/* Mobile layout */
+@media (max-width: 650px) {
+  #game .seat-left {
+    left: 2px;
+  }
+
+  #game .seat-right {
+    right: 2px;
+  }
+
+  #game .opponent {
+    padding: 5px 6px;
+    font-size: 10px;
+  }
+
+  #game .opponent-card-back {
+    width: 25px;
+    height: 37px;
+  }
+
+  #game .seat-left .opponent-card-back,
+  #game .seat-right .opponent-card-back {
+    width: 25px;
+    height: 37px;
+    margin-top: -21px;
+  }
+
+  #game .center-table {
+    gap: 12px;
+    max-width: calc(100vw - 65px);
+  }
+
+  #game #myHand {
+    left: 2% !important;
+    right: 2% !important;
+    bottom: 24px !important;
+  }
+
+  #game #myPlayerBadge {
+    left: 5px !important;
+    bottom: 80px !important;
+  }
+
+  #game #directionSymbol {
+    width: clamp(180px, 58vw, 260px);
+    height: clamp(180px, 58vw, 260px);
+  }
+
+  #game #gameMessage {
+    left: 95px !important;
+    right: 95px !important;
   }
 }
-```
+
+/* Short landscape screens */
+@media (orientation: landscape) and (max-height: 550px) {
+  #game #myHand {
+    bottom: 5px !important;
+    min-height: 70px;
+    max-height: 100px;
+    padding: 2px 4px 5px;
+  }
+
+  #game #myHand .card {
+    flex-basis: 53px;
+    width: 53px;
+  }
+
+  #game #myPlayerBadge {
+    bottom: 55px !important;
+  }
+
+  #game #directionSymbol {
+    width: 220px;
+    height: 220px;
+  }
+}
+
 
 
 @media (prefers-reduced-motion: reduce) {
