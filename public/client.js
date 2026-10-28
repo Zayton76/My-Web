@@ -685,11 +685,11 @@ if ($("deckLabel")) {
   );
 
   const seatLayouts = {
-    1: ["seat-top"],
-    2: ["seat-top", "seat-left"],
-    3: ["seat-top", "seat-left", "seat-right"],
-    4: ["seat-top-left", "seat-left", "seat-right", "seat-top-right"]
-  };
+  1: ["seat-top"],
+  2: ["seat-left", "seat-top"],
+  3: ["seat-left", "seat-top", "seat-right"],
+  4: ["seat-left", "seat-top-left", "seat-right", "seat-top-right"]
+};
 
   const seats = seatLayouts[otherPlayers.length] || [];
 
