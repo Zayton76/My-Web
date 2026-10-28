@@ -26,6 +26,50 @@ const COLOR_HEX = {
 
 const imageCache = new Map();
 
+const ALL_CARD_IMAGES = [];
+
+for (const letter of ["R", "B", "G", "Y"]) {
+  ALL_CARD_IMAGES.push(`${letter}0.png`);
+
+  for (let n = 1; n <= 9; n++) {
+    ALL_CARD_IMAGES.push(`${letter}${n}.png`);
+  }
+
+  ALL_CARD_IMAGES.push(
+    `${letter}S.png`,
+    `${letter}R.png`,
+    `${letter}A2.png`
+  );
+}
+
+ALL_CARD_IMAGES.push("WC.png", "W4.png");
+
+function preloadCardImages() {
+  return Promise.all(
+    ALL_CARD_IMAGES.map(filename => {
+      return new Promise(resolve => {
+        const image = loadCardImage(filename);
+          image.addEventListener("load", () => {
+    displayImage();
+  });
+        if (image.__loaded || (image.complete && image.naturalWidth > 0)) {
+          resolve();
+          return;
+        }
+
+        if (image.__failed) {
+          resolve();
+          return;
+        }
+
+        image.addEventListener("load", () => resolve(), { once: true });
+        image.addEventListener("error", () => resolve(), { once: true });
+      });
+    })
+  );
+}
+
+
 
 /* ===== SOUND EFFECTS + BACKGROUND MUSIC ===== */
 
@@ -771,3 +815,4 @@ $("colorPicker").addEventListener("click", event => {
     $("colorPicker").classList.add("hidden");
   }
 });
+preloadCardImages();
