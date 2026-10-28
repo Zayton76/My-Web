@@ -16,7 +16,6 @@ const COLORS = ["red", "yellow", "green", "blue"];
 
 const DEFAULT_SETTINGS = {
   stacking: false,
-  jumpIn: false,
   zeroSeven: false,
   drawUntilPlayable: false,
   sixReaction: false,
@@ -443,19 +442,10 @@ function playCard(room, socket, index, chosenColor) {
   const isTurn = playerIndex === game.turn;
   const top = game.discard[game.discard.length - 1];
 
-  const isJumpIn = game.settings.jumpIn &&
-    !isTurn &&
-    !game.drawnPlayableCard &&
-    card.color !== "wild" &&
-    card.color === top.color &&
-    card.value === top.value &&
-    game.pendingDraw === 0;
 
-  if (!isTurn && !isJumpIn) {
+  if (!isTurn) {
     return message(socket, "It isn't your turn.");
   }
-
-  if (isJumpIn) game.turn = playerIndex;
 
   
 if (
