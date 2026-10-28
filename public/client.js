@@ -44,14 +44,13 @@ for (const letter of ["R", "B", "G", "Y"]) {
 
 ALL_CARD_IMAGES.push("WC.png", "W4.png");
 
+
 function preloadCardImages() {
   return Promise.all(
     ALL_CARD_IMAGES.map(filename => {
       return new Promise(resolve => {
         const image = loadCardImage(filename);
-          image.addEventListener("load", () => {
-    displayImage();
-  });
+
         if (image.__loaded || (image.complete && image.naturalWidth > 0)) {
           resolve();
           return;
@@ -62,12 +61,13 @@ function preloadCardImages() {
           return;
         }
 
-        image.addEventListener("load", () => resolve(), { once: true });
-        image.addEventListener("error", () => resolve(), { once: true });
+        image.addEventListener("load", resolve, { once: true });
+        image.addEventListener("error", resolve, { once: true });
       });
     })
   );
 }
+
 
 
 
